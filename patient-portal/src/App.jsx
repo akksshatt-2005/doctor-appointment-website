@@ -3,7 +3,8 @@ import { io } from 'socket.io-client';
 import { auth } from './firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
-const API_BASE_URL = 'http://localhost:5000/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = `${API_URL}/api/v1`;
 
 export default function App() {
   const [view, setView] = useState('landing-view');
@@ -319,7 +320,7 @@ export default function App() {
   useEffect(() => {
     if (!token) return;
 
-    const socketInstance = io('http://localhost:5000', {
+    const socketInstance = io(API_URL, {
       transports: ['websocket']
     });
 
@@ -1096,7 +1097,7 @@ export default function App() {
                 {generatedPdfUrl && (
                   <div style={{ backgroundColor: 'rgba(45, 212, 191, 0.1)', border: '1px solid #2dd4bf', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', textAlign: 'center' }}>
                     <p style={{ color: '#2dd4bf', fontSize: '0.85rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>📄 Prescription Generated</p>
-                    <a href={generatedPdfUrl.startsWith('http') ? generatedPdfUrl : `http://localhost:5000${generatedPdfUrl}`} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', background: '#2dd4bf', color: '#0f172a', textDecoration: 'none', border: 'none', display: 'inline-block', fontWeight: 700 }}>
+                    <a href={generatedPdfUrl.startsWith('http') ? generatedPdfUrl : `${API_URL}${generatedPdfUrl}`} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', background: '#2dd4bf', color: '#0f172a', textDecoration: 'none', border: 'none', display: 'inline-block', fontWeight: 700 }}>
                       Download Prescription PDF
                     </a>
                   </div>
@@ -1609,7 +1610,7 @@ export default function App() {
                                 <>
                                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                                     {appt.prescription ? (
-                                      <a href={appt.prescription.pdfUrl ? (appt.prescription.pdfUrl.startsWith('http') ? appt.prescription.pdfUrl : `http://localhost:5000${appt.prescription.pdfUrl}`) : `http://localhost:5000/uploads/prescriptions/prescription-${appt.bookingId}.pdf`} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', textDecoration: 'none' }}>
+                                      <a href={appt.prescription.pdfUrl ? (appt.prescription.pdfUrl.startsWith('http') ? appt.prescription.pdfUrl : `${API_URL}${appt.prescription.pdfUrl}`) : `${API_URL}/uploads/prescriptions/prescription-${appt.bookingId}.pdf`} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', textDecoration: 'none' }}>
                                         📥 Prescription PDF
                                       </a>
                                     ) : (

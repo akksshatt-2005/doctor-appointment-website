@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
-const API_BASE_URL = 'http://localhost:5000/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = `${API_URL}/api/v1`;
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('doc_token') || '');
@@ -486,7 +487,7 @@ export default function App() {
     fetchOfflinePrescriptions();
     fetchMedicines();
 
-    const socketInstance = io('http://localhost:5000', {
+    const socketInstance = io(API_URL, {
       transports: ['websocket']
     });
 
@@ -979,7 +980,7 @@ export default function App() {
                   <div className="case-details-section">
                     <h4>Attached Records</h4>
                     {activeVideoAppt.reportFilePath ? (
-                      <a href={`http://localhost:5000${activeVideoAppt.reportFilePath}`} target="_blank" rel="noreferrer" className="btn btn-secondary btn-block" style={{ fontSize: '0.8rem', padding: '0.4rem', background: '#334155', color: '#fff', border: 'none', textDecoration: 'none', display: 'block', textAlign: 'center', borderRadius: '4px' }}>
+                      <a href={`${API_URL}${activeVideoAppt.reportFilePath}`} target="_blank" rel="noreferrer" className="btn btn-secondary btn-block" style={{ fontSize: '0.8rem', padding: '0.4rem', background: '#334155', color: '#fff', border: 'none', textDecoration: 'none', display: 'block', textAlign: 'center', borderRadius: '4px' }}>
                         📄 View Medical Report
                       </a>
                     ) : (
@@ -998,7 +999,7 @@ export default function App() {
                       <span style={{ fontSize: '3rem' }}>🎉</span>
                       <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '1rem 0' }}>Prescription Document Generated!</h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <a href={generatedPdfUrl.startsWith('http') ? generatedPdfUrl : `http://localhost:5000${generatedPdfUrl}`} target="_blank" rel="noreferrer" className="btn btn-primary btn-block" style={{ textDecoration: 'none' }}>
+                        <a href={generatedPdfUrl.startsWith('http') ? generatedPdfUrl : `${API_URL}${generatedPdfUrl}`} target="_blank" rel="noreferrer" className="btn btn-primary btn-block" style={{ textDecoration: 'none' }}>
                           🖨️ View/Print Prescription PDF
                         </a>
                         <button type="button" className="btn btn-secondary btn-block" onClick={() => setGeneratedPdfUrl('')}>
@@ -2407,7 +2408,7 @@ export default function App() {
                 <h4 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '1rem 0' }}>Prescription Document Generated Successfully!</h4>
                 <p style={{ color: 'var(--neutral-body)', marginBottom: '1.5rem' }}>The patient has been notified via SMS and Email with a direct download link.</p>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                  <a href={`http://localhost:5000${generatedPdfUrl}`} target="_blank" rel="noreferrer" className="btn btn-primary">
+                  <a href={`${API_URL}${generatedPdfUrl}`} target="_blank" rel="noreferrer" className="btn btn-primary">
                     🖨️ View / Print Prescription PDF
                   </a>
                   <button className="btn btn-secondary" onClick={() => setSelectedAppt(null)}>
