@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Book online video consultations and physical appointments at Neuro Harmony Clinic with India's leading Neuropsychiatrist, Dr. Priyadarshi Srivastava.">
+  <title>Dr. Priyadarshi Srivastava | Neuro Harmony Clinic - Telehealth & Clinic Bookings</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Navigation Bar -->
+    <header>
+      <div class="nav-wrapper">
+        <div class="logo" onclick="app.navigateTo('landing-view'); app.closeMobileMenu();">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/>
+          </svg>
+          <span>Neuro Harmony</span>
+        </div>
+        <!-- Hamburger Menu Toggle -->
+        <button class="menu-toggle" id="mobile-menu-toggle" onclick="app.toggleMobileMenu()" aria-label="Toggle navigation">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12" id="line-mid"></line>
+            <line x1="3" y1="6" x2="21" y2="6" id="line-top"></line>
+            <line x1="3" y1="18" x2="21" y2="18" id="line-bottom"></line>
+          </svg>
+        </button>
+        <ul class="nav-links" id="nav-links-menu">
+          <li><span class="nav-link active" id="nav-home" onclick="app.navigateTo('landing-view'); app.closeMobileMenu();">Home</span></li>
+          <li><span class="nav-link" id="nav-treatments" onclick="app.scrollToSection('treatments'); app.closeMobileMenu();">Treatments</span></li>
+          <li><span class="nav-link" id="nav-timings" onclick="app.scrollToSection('timings'); app.closeMobileMenu();">Timings</span></li>
+          <li><span class="nav-link" id="nav-reviews" onclick="app.scrollToSection('testimonials'); app.closeMobileMenu();">Reviews</span></li>
+          <li><span class="nav-link" id="nav-patient" onclick="app.navigateTo('patient-portal-view'); app.closeMobileMenu();">Patient Portal</span></li>
+          <li><span class="nav-link" id="nav-doctor" onclick="app.authDoctorDashboard(); app.closeMobileMenu();">Doctor Portal</span></li>
+          <li><span class="nav-cta" onclick="app.startBookingFlow();">Book Consultation</span></li>
+        </ul>
+      </div>
+    </header>
+
+    <!-- MAIN VIEWPORT -->
+    <main>
+
+      <!-- 1. LANDING PAGE VIEW -->
+      <section id="landing-view" class="view-section active">
+        <div class="container">
+          
+          <!-- Hero Section -->
+          <div class="hero-grid">
+            <div class="hero-content">
+              <h1>Comprehensive Care for <span>Mind & Brain</span></h1>
+              <p class="hero-subtitle">Experience world-class psychiatric & neurological care from the comfort of your home or at our modern clinic. Led by one of India's most trusted neuropsychiatrists.</p>
+              
+              <div class="hero-cta-group">
+                <button class="btn btn-primary" onclick="app.startBookingFlow()">Book Online Video Call</button>
+                <button class="btn btn-secondary" onclick="app.scrollToSection('timings')">View Clinic Hours</button>
+              </div>
+
+              <div class="hero-stats">
+                <div class="stat-item">
+                  <h3>15+</h3>
+                  <p>Years Experience</p>
+                </div>
+                <div class="stat-item">
+                  <h3>10k+</h3>
+                  <p>Happy Patients</p>
+                </div>
+                <div class="stat-item">
+                  <h3>4.9★</h3>
+                  <p>Patient Rating</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-image-wrapper">
+              <div class="doctor-profile-card">
+                <span class="badge-online">Available Online</span>
+                <img src="doctor-avatar.jpg" alt="Dr. Priyadarshi Srivastava">
+                <div class="doctor-info-text">
+                  <h2>Dr. Priyadarshi Srivastava</h2>
+                  <div class="specialization">Leading Neuropsychiatrist in India</div>
+                  <div class="qualification">MBBS, DPM, DNB (Neuropsychiatry)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timings & Schedules Section -->
+          <div id="timings" class="timings-section scroll-anchor">
+            <div class="section-header-center">
+              <h2>Our Consultations Schedules</h2>
+              <p>Choose between visiting our physical clinic or booking an online video consultation slot from anywhere.</p>
+            </div>
+            
+            <div class="timings-grid">
+              <!-- Physical Clinic Card -->
+              <div class="timing-card clinic-hours">
+                <div class="timing-icon-box">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
+                  </svg>
+                </div>
+                <div class="timing-details">
+                  <h3>Physical Clinic Visit</h3>
+                  <p class="days">Monday to Saturday</p>
+                  <p class="time">11:00 AM - 04:00 PM</p>
+                  <span class="note">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    Walk-in appointments at Neuro Harmony Clinic
+                  </span>
+                </div>
+              </div>
+
+              <!-- Online Video Consult Card -->
+              <div class="timing-card online-hours">
+                <div class="timing-icon-box">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z" fill="currentColor"/>
+                  </svg>
+                </div>
+                <div class="timing-details">
+                  <h3>Online Video Consultation</h3>
+                  <p class="days">Monday to Sunday</p>
+                  <p class="time">05:00 PM - 09:00 PM</p>
+                  <span class="note">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    Fees: ₹700. Linked with Razorpay secure payments
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Treatments List -->
+          <div id="treatments" class="treatments-section scroll-anchor">
+            <div class="section-header-center">
+              <h2>Expert Diagnosis & Treatment</h2>
+              <p>Specialized clinical care for a wide range of psychiatric, cognitive, and neuropsychiatric disorders.</p>
+            </div>
+            
+            <div class="treatments-grid">
+              <div class="treatment-card"><span class="dot"></span><h4>Headache & Migraine</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>Anxiety & Phobia Disorders</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>Insomnia & Sleep Problems</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>Anger Outbursts & Impulse Control</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>Cervical Spondylosis-related Issues</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>ADHD (Attention Deficit Hyperactivity Disorder)</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>Depression & Emotional Struggles</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>Relationship & Marital Issues</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>Multiple Body Pains linked to Stress</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>Addiction (Alcohol, Smoking, Internet, etc.)</h4></div>
+              <div class="treatment-card"><span class="dot"></span><h4>Sexual & Psychosexual Problems</h4></div>
+            </div>
+          </div>
+
+          <!-- Why Choose Us -->
+          <div class="choose-section">
+            <h2>Why Choose Dr. Priyadarshi Srivastava?</h2>
+            <div class="choose-grid">
+              <div class="choose-card">
+                <div class="num">01</div>
+                <h3>Trusted Experience</h3>
+                <p>One of India's leading Neuropsychiatrists with extensive experience in handling complex mental health conditions.</p>
+              </div>
+              <div class="choose-card">
+                <div class="num">02</div>
+                <h3>Holistic Wellness</h3>
+                <p>Integrates biological treatments, lifestyle changes, and cognitive support for sustainable brain and mind healing.</p>
+              </div>
+              <div class="choose-card">
+                <div class="num">03</div>
+                <h3>Confidential & Ethical</h3>
+                <p>Fully compliant with telemedicine ethics and clinical protocols. Your case data is kept completely private and safe.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Patient Reviews & Testimonials Section -->
+          <div class="reviews-display-section" id="testimonials">
+            <div class="section-header-center">
+              <h2>What Our Patients Say</h2>
+              <p>Real feedback from patients who booked online consultations and visited Neuro Harmony Clinic.</p>
+              <div class="reviews-stats-summary" id="reviews-stats-summary">
+                <!-- Dynamic Rating Stats -->
+              </div>
+            </div>
+            
+            <div class="testimonials-grid" id="reviews-display-grid">
+              <!-- Dynamic Review Cards -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 2. BOOKING WIZARD VIEW -->
+      <section id="booking-view" class="view-section section-padding">
+        <div class="container">
+          <div class="section-header-center" style="margin-bottom: 2rem;">
+            <h2>Online Appointment Scheduling</h2>
+            <p>Schedule your 30-minute private video consultation. Payment of ₹700 is processed securely before booking confirmation.</p>
+          </div>
+
+          <div class="wizard-layout">
+            <div class="wizard-steps-container">
+              
+              <!-- Calendar & Time Slot Picker -->
+              <div class="card-panel">
+                <div class="card-panel-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Select Consultation Date & Time
+                </div>
+                
+                <div class="scheduler-container">
+                  <div class="date-selector-header">
+                    <span id="calendar-month-year">July 2026</span>
+                  </div>
+                  <!-- Weekly Date Slider -->
+                  <div class="date-slider" id="date-slider">
+                    <!-- Dynamic Date Cards go here -->
+                  </div>
+
+                  <div class="slots-container">
+                    <div class="date-selector-header">
+                      <span>Available Evening Slots (5:00 PM - 9:00 PM)</span>
+                    </div>
+                    <!-- Time Slots Grid -->
+                    <div class="slots-grid" id="slots-grid">
+                      <!-- Dynamic Time Cards go here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Patient Details Form -->
+              <div class="card-panel">
+                <div class="card-panel-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Patient Details
+                </div>
+                <form id="patient-details-form" onsubmit="event.preventDefault(); app.openPaymentModal();">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="patient-name">Patient's Full Name *</label>
+                      <input type="text" id="patient-name" class="form-control" placeholder="Enter full name" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="patient-age">Age *</label>
+                      <input type="number" id="patient-age" class="form-control" placeholder="Enter age" min="1" max="120" required>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="patient-email">Email Address *</label>
+                      <input type="email" id="patient-email" class="form-control" placeholder="name@example.com" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="patient-phone">Phone Number (WhatsApp) *</label>
+                      <input type="tel" id="patient-phone" class="form-control" placeholder="10-digit mobile number" pattern="[6-9][0-9]{9}" maxlength="10" oninput="this.value = this.value.replace(/\D/g, ''); this.classList.remove('input-error');" required>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="patient-symptoms">Brief Description of Symptoms / Consultation Purpose *</label>
+                    <textarea id="patient-symptoms" class="form-control" placeholder="Describe symptoms, duration, previous diagnoses, or queries..." required></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Upload Medical Reports (PDF, Images - Optional)</label>
+                    <div class="file-upload-box">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      <p>Drag & drop files here or click to select</p>
+                      <input type="file" id="patient-reports" accept=".pdf,.png,.jpg,.jpeg" onchange="app.handleFileUpload(this)">
+                      <div class="file-name-display" id="file-name-display"></div>
+                    </div>
+                  </div>
+
+                  <button type="submit" style="display:none;" id="form-submit-trigger"></button>
+                </form>
+              </div>
+
+            </div>
+
+            <!-- Booking Summary Sidebar -->
+            <div class="booking-sidebar-container">
+              <div class="card-panel summary-card">
+                <div class="card-panel-title">
+                  Summary
+                </div>
+                
+                <div class="summary-details-list">
+                  <div class="summary-item">
+                    <span class="label">Consultant:</span>
+                    <span class="val">Dr. Priyadarshi Srivastava</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="label">Type:</span>
+                    <span class="val">Online Video Call</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="label">Date:</span>
+                    <span class="val" id="summary-date">Select a date</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="label">Time:</span>
+                    <span class="val" id="summary-time">Select a slot</span>
+                  </div>
+                  <div class="summary-item total">
+                    <span class="label">Consultation Fee:</span>
+                    <span class="val">₹700</span>
+                  </div>
+                </div>
+
+                <button class="btn btn-indigo btn-block" onclick="document.getElementById('form-submit-trigger').click()">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  Proceed to Payment (₹700)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. BOOKING CONFIRMATION VIEW -->
+      <section id="confirmation-view" class="view-section section-padding">
+        <div class="container">
+          <div class="card-panel confirmation-card">
+            <div class="success-badge-large">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h2>Appointment Confirmed!</h2>
+            <p>Your payment of ₹700 was successfully processed through Razorpay.</p>
+
+            <div class="booking-receipt-box">
+              <div class="receipt-header">
+                <span class="receipt-id" id="receipt-booking-id">Booking ID: NH-82910</span>
+                <span class="receipt-status">Paid</span>
+              </div>
+              <div class="receipt-grid">
+                <div class="receipt-item">
+                  <span class="label">Patient Name</span>
+                  <span class="val" id="receipt-patient-name">Rahul Verma</span>
+                </div>
+                <div class="receipt-item">
+                  <span class="label">Doctor Name</span>
+                  <span class="val">Dr. Priyadarshi Srivastava</span>
+                </div>
+                <div class="receipt-item">
+                  <span class="label">Consultation Slot</span>
+                  <span class="val" id="receipt-slot">July 08, 05:30 PM</span>
+                </div>
+                <div class="receipt-item">
+                  <span class="label">Payment ID</span>
+                  <span class="val" id="receipt-payment-id">pay_Pzq83JK10asd</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="countdown-box">
+              <span class="label">Starts In</span>
+              <div class="countdown-timer-nums" id="countdown-timer">
+                <div class="countdown-unit"><span class="num">00</span><span>Hours</span></div> :
+                <div class="countdown-unit"><span class="num">00</span><span>Mins</span></div> :
+                <div class="countdown-unit"><span class="num">00</span><span>Secs</span></div>
+              </div>
+            </div>
+
+            <div class="confirmation-actions">
+              <button class="btn btn-primary" id="btn-join-call" onclick="app.joinVideoCall(false)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                Join Video Consultation Room
+              </button>
+              <button class="btn btn-secondary" onclick="app.navigateTo('landing-view')">Return Home</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. VIDEO CONSULTATION ROOM VIEW -->
+      <section id="video-view" class="view-section section-padding">
+        <div class="video-layout">
+          
+          <!-- Live stream screen panel -->
+          <div class="video-workspace">
+            <div class="video-streams-grid">
+              
+              <!-- Doctor Video Stream Container -->
+              <div class="remote-stream-container">
+                <canvas id="remote-stream-canvas" class="video-canvas"></canvas>
+                <div class="stream-overlay-info">
+                  <span id="remote-status-dot"></span>
+                  <p id="remote-user-label">Dr. Priyadarshi Srivastava (Neuropsychiatrist)</p>
+                </div>
+              </div>
+
+              <!-- Patient Video Stream Container (Picture in Picture) -->
+              <div class="local-stream-container" id="local-stream-container">
+                <canvas id="local-stream-canvas" class="local-stream-canvas"></canvas>
+                <!-- Camera Off Silhouette / Initial -->
+                <div class="local-stream-avatar" id="local-avatar">P</div>
+              </div>
+
+            </div>
+
+            <!-- Controls bar -->
+            <div class="video-controls-bar">
+              <div class="call-timer" id="call-timer-display">00:00</div>
+              
+              <div class="controls-group">
+                <!-- Mute toggle -->
+                <button class="control-btn" id="btn-toggle-mic" onclick="app.toggleMic()">
+                  <svg id="mic-on-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                  <svg id="mic-off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+
+                <!-- Camera toggle -->
+                <button class="control-btn" id="btn-toggle-cam" onclick="app.toggleCam()">
+                  <svg id="cam-on-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  <svg id="cam-off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+
+                <!-- End Consultation -->
+                <button class="control-btn btn-hangup" onclick="app.endConsultation()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" fill="currentColor"/></svg>
+                </button>
+              </div>
+
+              <div class="call-info-badge" id="call-connection-type">Secure P2P Encrypted</div>
+            </div>
+          </div>
+
+          <!-- Chat & Patient Case Info Sidebar -->
+          <div class="consultation-sidebar">
+            <div class="sidebar-tab-header">
+              <div class="sidebar-tab active" id="tab-chat" onclick="app.toggleSidebarTab('chat')">Live Chat</div>
+              <div class="sidebar-tab" id="tab-case" onclick="app.toggleSidebarTab('case')">Patient File</div>
+              <div class="sidebar-tab" id="tab-presc" onclick="app.toggleSidebarTab('presc')" style="display: none;">Digital Rx</div>
+            </div>
+            
+            <div class="sidebar-content-area">
+              
+              <!-- Tab 1: Live Chat -->
+              <div class="chat-container" id="chat-tab-content">
+                <div class="chat-messages" id="chat-messages-box">
+                  <!-- Dynamic Chat messages go here -->
+                </div>
+                <div class="chat-input-box">
+                  <input type="text" id="chat-input-field" placeholder="Type message..." onkeypress="if(event.key === 'Enter') app.sendChatMessage()">
+                  <button class="chat-send-btn" onclick="app.sendChatMessage()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tab 2: Patient File Details -->
+              <div class="case-details-tab-content" id="case-tab-content" style="display:none;">
+                <div class="case-details-section">
+                  <h4>Patient Profile</h4>
+                  <div class="patient-meta">
+                    <div class="meta-row"><span class="lbl">Name:</span><span class="val" id="case-patient-name">N/A</span></div>
+                    <div class="meta-row"><span class="lbl">Age:</span><span class="val" id="case-patient-age">N/A</span></div>
+                    <div class="meta-row"><span class="lbl">Phone:</span><span class="val" id="case-patient-phone">N/A</span></div>
+                  </div>
+                </div>
+
+                <div class="case-details-section">
+                  <h4>Symptoms / Reason</h4>
+                  <p id="case-patient-symptoms">No complaints reported.</p>
+                </div>
+
+                <div class="case-details-section">
+                  <h4>Attached Records</h4>
+                  <p id="case-patient-records">No files uploaded.</p>
+                </div>
+
+                <div class="case-details-section" id="patient-prescription-download-box" style="display:none;">
+                  <h4>Treatment Plan</h4>
+                  <button class="btn btn-primary btn-block" onclick="app.showPrescriptionPrintModal(true)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download Prescription
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tab 3: Digital Prescription (Doctor Only) -->
+              <div class="prescription-tab-content" id="presc-tab-content" style="display:none; padding:1.25rem;">
+                <div class="prescription-form-box">
+                  <div class="prescription-patient-card-header" style="background-color: rgba(15, 118, 110, 0.1); padding: 0.75rem 1rem; border-radius: var(--border-radius-md); margin-bottom: 1rem; color: var(--primary-dark); font-weight: 700;">
+                    <span class="name-lbl" style="font-size:0.75rem; text-transform:uppercase; opacity:0.8; display:block;">Active Consultation Prescription</span>
+                    <span id="presc-side-patient-name" style="font-size:1.1rem;">Select a patient</span>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="presc-side-diagnosis" style="font-size: 0.85rem; font-weight: 600; color: var(--neutral-dark); display: block; margin-bottom: 0.35rem;">Diagnosis / Clinical Notes</label>
+                    <input type="text" id="presc-side-diagnosis" class="form-control" placeholder="Enter diagnosis (e.g. Anxiety, Insomnia)" style="width: 100%; padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+                  </div>
+
+                  <!-- Add Medicines row -->
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--neutral-dark); display: block; margin-bottom: 0.35rem;">Prescribe Medicines</label>
+                    <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 0.35rem; margin-bottom: 0.35rem;">
+                      <input type="text" id="presc-side-med-name" class="form-control" placeholder="Med Name" style="padding: 0.5rem; font-size: 0.85rem;">
+                      <input type="text" id="presc-side-med-dosage" class="form-control" placeholder="Dosage" style="padding: 0.5rem; font-size: 0.85rem;">
+                      <input type="text" id="presc-side-med-freq" class="form-control" placeholder="Freq" style="padding: 0.5rem; font-size: 0.85rem;">
+                    </div>
+                    <button class="btn btn-secondary btn-block" style="padding: 0.4rem; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;" onclick="app.addPrescriptionItem(true)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Add Medicine
+                    </button>
+                  </div>
+
+                  <!-- Added medicines list -->
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--neutral-dark); display: block; margin-bottom: 0.35rem;">Prescribed Items List</label>
+                    <div class="presc-items-list" id="presc-side-added-items-list" style="border: 1px solid var(--neutral-border); border-radius: var(--border-radius-md); padding: 0.5rem; background-color: var(--neutral-light); min-height: 50px; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem;">
+                      <!-- Added items go here -->
+                      <p style="color:var(--neutral-body); font-size:0.8rem; text-align:center; padding: 0.5rem 0; margin: 0;" id="presc-side-empty-hint">No medications added yet.</p>
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="presc-side-advice" style="font-size: 0.85rem; font-weight: 600; color: var(--neutral-dark); display: block; margin-bottom: 0.35rem;">Special Instructions / Advice</label>
+                    <textarea id="presc-side-advice" class="form-control" placeholder="Advice, blue-light filters, follow up in 2 weeks..." style="width: 100%; height: 60px; padding: 0.5rem; font-size: 0.85rem; resize: none;"></textarea>
+                  </div>
+
+                  <button class="btn btn-primary btn-block" style="padding: 0.75rem; font-size: 0.9rem; font-weight:700; display: flex; align-items: center; justify-content: center; gap: 0.35rem;" onclick="app.generatePrescription(true)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Generate Digital Rx
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 5. PATIENT PORTAL (LOGIN/CREATE ACCOUNT & TRACK APPOINTMENTS) -->
+      <section id="patient-portal-view" class="view-section section-padding">
+        <div class="container" style="max-width: 800px; margin: 0 auto;">
+          
+          <!-- State 1: Logged Out (Auth Screen) -->
+          <div id="patient-auth-container" class="card-panel">
+            <div class="patient-auth-tabs" style="display: flex; gap: 1rem; border-bottom: 1px solid var(--neutral-border); margin-bottom: 2rem;">
+              <button class="patient-tab active" id="btn-patient-login-tab" onclick="app.setPatientAuthTab('login')">Login</button>
+              <button class="patient-tab" id="btn-patient-register-tab" onclick="app.setPatientAuthTab('register')">Create Account</button>
+            </div>
+
+            <!-- Form input section -->
+            <div id="patient-auth-form-step">
+              <div class="form-group" id="patient-auth-name-group" style="display: none; margin-bottom: 1.5rem;">
+                <label for="patient-auth-name" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Full Name *</label>
+                <input type="text" id="patient-auth-name" class="form-control" placeholder="Enter your full name">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 2rem;">
+                <label for="patient-auth-phone" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Mobile Number (WhatsApp) *</label>
+                <input type="tel" id="patient-auth-phone" class="form-control" placeholder="10-digit Indian mobile number" pattern="[6-9][0-9]{9}" maxlength="10" oninput="this.value = this.value.replace(/\D/g, '')">
+              </div>
+
+              <button class="btn btn-primary btn-block" onclick="app.sendPatientOTP()" style="padding: 0.85rem; font-weight: 700;">
+                Get OTP Code
+              </button>
+            </div>
+
+            <!-- OTP input section -->
+            <div id="patient-auth-otp-step" style="display: none;">
+              <p style="color: var(--neutral-body); margin-bottom: 1.5rem; text-align: center; font-size: 0.95rem;">
+                A simulated 6-digit OTP code has been generated. Please check your screen/notifications.
+              </p>
+              
+              <div class="form-group" style="margin-bottom: 2rem; text-align: center;">
+                <label for="patient-auth-otp" style="font-weight: 600; display: block; margin-bottom: 0.75rem;">Enter 6-Digit OTP *</label>
+                <input type="text" id="patient-auth-otp" class="form-control" placeholder="******" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.25em;" oninput="this.value = this.value.replace(/\D/g, '')">
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button class="btn btn-secondary" onclick="app.resetPatientAuthStep()" style="padding: 0.75rem;">Back</button>
+                <button class="btn btn-primary" onclick="app.verifyPatientOTP()" style="padding: 0.75rem; font-weight: 700;">Verify & Login</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- State 2: Logged In (Patient Dashboard) -->
+          <div id="patient-dashboard-container" class="card-panel" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neutral-border); padding-bottom: 1rem; margin-bottom: 2rem;">
+              <div>
+                <h2 style="font-size: 1.6rem; color: var(--neutral-dark);" id="patient-welcome-name">Welcome Patient</h2>
+                <p style="font-size: 0.85rem; color: var(--neutral-body);" id="patient-welcome-phone">+91 XXXXX XXXXX</p>
+              </div>
+              <button class="btn btn-secondary" style="padding: 0.4rem 1rem; font-size: 0.85rem;" onclick="app.logoutPatient()">
+                Logout
+              </button>
+            </div>
+
+            <h3 style="font-size: 1.2rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--primary-dark);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-color);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Your Consultations & Appointments History
+            </h3>
+
+            <!-- Appointments List Grid -->
+            <div id="patient-dashboard-bookings-list" style="display: flex; flex-direction: column; gap: 1.5rem;">
+              <!-- Dynamic cards for appointments will go here -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 6. DOCTOR'S PRIVATE PORTAL -->
+      <section id="doctor-view" class="view-section section-padding">
+        <div class="container">
+          
+          <div class="portal-header-banner">
+            <div>
+              <h1>Doctor Portal</h1>
+              <p>Welcome back, Dr. Priyadarshi Srivastava. Manage your virtual consult bookings and issue digital prescriptions.</p>
+            </div>
+            
+            <div class="doctor-status-toggle">
+              <span style="width:10px; height:10px; border-radius:50%; background-color:var(--success); display:inline-block;"></span>
+              <span style="font-size:0.85rem; font-weight:600; color:var(--white);">Accepting Telehealth Slots</span>
+            </div>
+          </div>
+
+          <div class="portal-grid-layout">
+            
+            <!-- Bookings List Table -->
+            <div class="card-panel">
+              <div class="card-panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Today's Appointment Schedule
+              </div>
+              
+              <div class="appointment-list-table-container">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>Time Slot</th>
+                      <th>Patient Details</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="doctor-appointments-list">
+                    <!-- Dynamic Table Rows go here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Prescription Workspace Panel -->
+            <div class="card-panel prescription-workspace">
+              <div class="card-panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Prescription Workspace
+              </div>
+
+              <div class="prescription-form-box" id="presc-form-box" style="opacity: 0.5; pointer-events: none;">
+                <div class="prescription-patient-card-header">
+                  <span class="name-lbl">Active Consultation</span>
+                  <div class="patient-name" id="presc-active-patient-name">Select a patient</div>
+                </div>
+
+                <div class="form-group">
+                  <label for="presc-diagnosis">Diagnosis / Clinical Notes</label>
+                  <input type="text" id="presc-diagnosis" class="form-control" placeholder="Enter diagnosis (e.g. Chronic Migraine, General Anxiety)">
+                </div>
+
+                <!-- Add Medicines row -->
+                <div class="form-group">
+                  <label>Prescribe Medicines</label>
+                  <div class="prescription-input-row">
+                    <input type="text" id="presc-med-name" class="form-control" placeholder="Medicine Name">
+                    <input type="text" id="presc-med-dosage" class="form-control" placeholder="Dosage (e.g. 500mg)">
+                    <input type="text" id="presc-med-freq" class="form-control" placeholder="Freq (e.g. 1-0-1)">
+                  </div>
+                  <button class="btn btn-secondary btn-block" style="margin-top:0.5rem; padding:0.5rem;" onclick="app.addPrescriptionItem()">+ Add Medicine</button>
+                </div>
+
+                <!-- Added medicines display -->
+                <div class="form-group">
+                  <label>Prescribed Items List</label>
+                  <div class="presc-items-list" id="presc-added-items-list">
+                    <!-- Added items go here -->
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="presc-advice">Special Instructions / General Advice</label>
+                  <textarea id="presc-advice" class="form-control" placeholder="Drink plenty of water, avoid screen time, follow up in 2 weeks..."></textarea>
+                </div>
+
+                <button class="btn btn-primary btn-block" id="presc-generate-btn" onclick="app.generatePrescription()">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Generate Digital Prescription
+                </button>
+                <button class="btn btn-primary btn-block" id="presc-update-btn" onclick="app.generatePrescription()" style="display: none; background-color: var(--primary-dark); border-color: var(--primary-dark);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Update Prescription
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 6. MOCK RAZORPAY MODAL OVERLAY -->
+    <div class="razorpay-overlay" id="razorpay-overlay">
+      <div class="razorpay-modal">
+        
+        <!-- Header -->
+        <div class="rzp-header">
+          <div class="rzp-merchant-info">
+            <div class="rzp-logo-circle">NH</div>
+            <div class="rzp-merchant-name">
+              <h4>Neuro Harmony Clinic</h4>
+              <p>Dr. Priyadarshi Srivastava</p>
+            </div>
+          </div>
+          <div class="rzp-amount-display">
+            <span class="amt-label">AMOUNT</span>
+            <span class="amt-val">₹700.00</span>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="rzp-body">
+          <span class="rzp-section-title">Payment Options</span>
+          
+          <div class="rzp-methods">
+            
+            <!-- Cards Option -->
+            <div class="rzp-method-option active" id="rzp-opt-card" onclick="app.selectRazorpayMethod('card')">
+              <div class="rzp-method-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              </div>
+              <div class="rzp-method-details">
+                <h5>Card</h5>
+                <p>Visa, MasterCard, RuPay, Maestro</p>
+              </div>
+            </div>
+
+            <!-- Card Sub Form -->
+            <div class="rzp-details-form active" id="rzp-form-card">
+              <div class="form-group" style="margin-bottom:0.75rem;">
+                <input type="text" class="form-control" id="rzp-card-num" placeholder="Card Number" value="4312 8901 2345 6789" style="padding:0.5rem 0.75rem; font-size:0.9rem;">
+              </div>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <input type="text" class="form-control" id="rzp-card-exp" placeholder="Expiry (MM/YY)" value="12/29" style="padding:0.5rem 0.75rem; font-size:0.9rem;">
+                <input type="password" class="form-control" id="rzp-card-cvv" placeholder="CVV" value="123" style="padding:0.5rem 0.75rem; font-size:0.9rem;">
+              </div>
+            </div>
+
+            <!-- UPI Option -->
+            <div class="rzp-method-option" id="rzp-opt-upi" onclick="app.selectRazorpayMethod('upi')">
+              <div class="rzp-method-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              </div>
+              <div class="rzp-method-details">
+                <h5>UPI</h5>
+                <p>Google Pay, PhonePe, Paytm, BHIM</p>
+              </div>
+            </div>
+
+            <!-- UPI Sub Form -->
+            <div class="rzp-details-form" id="rzp-form-upi">
+              <div class="form-group" style="margin-bottom:0;">
+                <input type="text" class="form-control" id="rzp-upi-id" placeholder="UPI ID (e.g. mobile@upi)" value="doctor.brother@okaxis" style="padding:0.5rem 0.75rem; font-size:0.9rem;">
+              </div>
+            </div>
+
+            <!-- Netbanking Option -->
+            <div class="rzp-method-option" id="rzp-opt-nb" onclick="app.selectRazorpayMethod('nb')">
+              <div class="rzp-method-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20M5 17V11M9 17V11M13 17V11M17 17V11M2 7l10-5 10 5M4 7h16" fill="none" stroke="currentColor"/></svg>
+              </div>
+              <div class="rzp-method-details">
+                <h5>Netbanking</h5>
+                <p>SBI, HDFC, ICICI, Axis, Kotak</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="rzp-footer">
+          <button class="rzp-btn-pay" onclick="app.processRazorpayPayment()">
+            Pay ₹700.00
+          </button>
+          
+          <div class="rzp-secure-badge">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2C9.24 2 7 4.24 7 7v3H6c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-1V7c0-2.76-2.24-5-5-5zm3 5v3H9V7c0-1.66 1.34-3 3-3s3 1.34 3 3z"/>
+            </svg>
+            Secured by Razorpay • Test Mode
+          </div>
+        </div>
+
+        <!-- Loader Screen Overlay inside modal -->
+        <div class="rzp-loader-screen" id="rzp-loader-screen">
+          <div class="rzp-spinner" id="rzp-spinner"></div>
+          <div class="rzp-success-checkmark" id="rzp-success-checkmark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h4 id="rzp-loader-text" style="font-weight:600; color:var(--neutral-dark);">Verifying details...</h4>
+          <p id="rzp-loader-subtext" style="font-size:0.85rem; color:#64748b; margin-top:0.25rem;">Do not refresh or close this window.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 7. PRIVATE DOCTOR AUTH PASSWORD MODAL -->
+    <div class="doctor-auth-overlay" id="doctor-auth-overlay">
+      <div class="doctor-auth-modal">
+        <h3>Doctor Authentication</h3>
+        <p>Please enter the security passcode to access the private clinic dashboard.</p>
+        <input type="password" id="doctor-passcode" class="form-control" placeholder="••••" maxlength="4" onkeypress="if(event.key === 'Enter') app.verifyDoctorPasscode()">
+        <div style="display:flex; gap:0.5rem; justify-content:center; margin-top:1rem;">
+          <button class="btn btn-primary" onclick="app.verifyDoctorPasscode()">Authenticate</button>
+          <button class="btn btn-secondary" onclick="app.closeDoctorAuth()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. PRINTABLE PRESCRIPTION MODAL OVERLAY -->
+    <div class="prescription-print-modal-overlay" id="prescription-print-overlay">
+      <div class="prescription-print-modal">
+        <div class="prescription-print-body" id="prescription-print-content">
+          <!-- Letterhead -->
+          <div class="prescription-letterhead">
+            <div class="letterhead-doc-details">
+              <h2>Dr. Priyadarshi Srivastava</h2>
+              <p class="qual">MBBS, DPM, DNB (Neuropsychiatry)</p>
+              <p class="specialty">Consultant Neuropsychiatrist</p>
+            </div>
+            <div class="letterhead-clinic-details">
+              <h3>Neuro Harmony Clinic</h3>
+              <p>Mind & Brain Specialist Centre</p>
+              <p>Ugf 19, Subash Chandra Bose Complex,</p>
+              <p>Chowk, Lucknow, UP</p>
+            </div>
+          </div>
+
+          <!-- Patient details row -->
+          <div class="prescription-patient-info-strip">
+            <div class="strip-item">
+              <span class="lbl">Patient Name:</span>
+              <span class="val" id="print-patient-name">Rahul Kumar</span>
+            </div>
+            <div class="strip-item">
+              <span class="lbl">Age / Gender:</span>
+              <span class="val" id="print-patient-age">28 Years / M</span>
+            </div>
+            <div class="strip-item">
+              <span class="lbl">Date:</span>
+              <span class="val" id="print-date">06-July-2026</span>
+            </div>
+            <div class="strip-item">
+              <span class="lbl">Rx ID:</span>
+              <span class="val" id="print-rx-id">RX-9821-NH</span>
+            </div>
+          </div>
+
+          <!-- Rx section -->
+          <div class="prescription-rx-content-grid">
+            <div class="rx-symbol-column">℞</div>
+            <div class="rx-main-body">
+              <h4>MEDICATIONS</h4>
+              
+              <table class="rx-meds-table">
+                <thead>
+                  <tr>
+                    <th>Medicine (Generic/Brand)</th>
+                    <th>Dosage</th>
+                    <th>Frequency</th>
+                  </tr>
+                </thead>
+                <tbody id="print-meds-table-body">
+                  <!-- Dynamic prescription items -->
+                </tbody>
+              </table>
+
+              <div class="rx-diagnosis-box">
+                <h5>DIAGNOSIS & CLINICAL NOTES</h5>
+                <p id="print-diagnosis">Mild Depressive Episode with Psychosomatic Body Pains.</p>
+              </div>
+
+              <div class="rx-diagnosis-box" style="margin-top: 1rem; background-color:transparent; border:none; padding:0;">
+                <h5>GENERAL ADVICE & SPECIAL INSTRUCTIONS</h5>
+                <p id="print-advice" style="font-style: italic; color: #475569;">Avoid visual screen triggers 1 hour before sleeping. Practise progressive muscle relaxation daily.</p>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Signature block -->
+          <div class="prescription-signature-row">
+            <div class="signature-box">
+              <div class="signature-img-placeholder">Dr. Priyadarshi Srivastava</div>
+              <p>Authorized Signature</p>
+              <p style="font-size:0.75rem; color:#94a3b8;">Neuro Harmony Clinic</p>
+            </div>
+          </div>
+
+        </div>
+        <div class="prescription-print-footer">
+          <button class="btn btn-secondary" onclick="app.closePrescriptionPrintModal()">Close</button>
+          <button class="btn btn-primary" onclick="app.printPrescription()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print / PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. PATIENT FEEDBACK & RATING MODAL -->
+    <div class="feedback-overlay" id="feedback-overlay">
+      <div class="feedback-modal">
+        <h3>Share Your Consultation Feedback</h3>
+        <p>Please rate your experience with Dr. Priyadarshi Srivastava. Your review helps other patients seek trust and clarity.</p>
+        
+        <!-- Stars Container -->
+        <div class="feedback-stars-container" id="feedback-stars">
+          <span class="star-item-select" data-rating="1" onclick="app.setFeedbackRating(1)">★</span>
+          <span class="star-item-select" data-rating="2" onclick="app.setFeedbackRating(2)">★</span>
+          <span class="star-item-select" data-rating="3" onclick="app.setFeedbackRating(3)">★</span>
+          <span class="star-item-select" data-rating="4" onclick="app.setFeedbackRating(4)">★</span>
+          <span class="star-item-select" data-rating="5" onclick="app.setFeedbackRating(5)">★</span>
+        </div>
+        <p id="feedback-rating-hint" style="font-size:0.85rem; font-weight:700; color:var(--primary-color); margin-top:-0.5rem; margin-bottom:1rem;">Excellent (5 Stars)</p>
+        
+        <div class="form-group" style="text-align:left;">
+          <label for="feedback-comment">Your Review / Comments</label>
+          <textarea id="feedback-comment" class="form-control" placeholder="Tell us how Dr. Priyadarshi helped you today. (e.g. Doctor listened carefully, very professional advice, helped relieve my stress)"></textarea>
+        </div>
+
+        <div style="display:flex; gap:0.5rem; justify-content:center; margin-top:1.5rem;">
+          <button class="btn btn-primary btn-block" onclick="app.submitFeedback()">Submit Feedback</button>
+          <button class="btn btn-secondary" onclick="app.closeFeedbackModal()">Skip</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footers -->
+    <footer class="app-footer">
+      <div class="footer-grid">
+        <div class="footer-col-about">
+          <h3>
+            <svg viewBox="0 0 24 24">
+              <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/>
+            </svg>
+            Neuro Harmony
+          </h3>
+          <p>Neuro Harmony Clinic is a premier medical centre dedicated to the comprehensive study, diagnosis, and treatment of neuropsychiatric conditions. Under Dr. Priyadarshi Srivastava, we deliver compassionate psychiatric care and secure telemedicine consultations to patients nationwide.</p>
+        </div>
+        <div class="footer-col-links">
+          <h4>Quick Links</h4>
+          <ul class="footer-links-list">
+            <li><a href="#" onclick="app.navigateTo('landing-view'); return false;">Home</a></li>
+            <li><a href="#" onclick="app.startBookingFlow(); return false;">Book Appointment</a></li>
+            <li><a href="#" onclick="app.scrollToSection('treatments'); return false;">Expertise Areas</a></li>
+            <li><a href="#" onclick="app.scrollToSection('testimonials'); return false;">Patient Reviews</a></li>
+            <li><a href="#" onclick="app.navigateTo('patient-portal-view'); return false;">Patient Portal (Track Appt)</a></li>
+            <li><a href="#" onclick="app.authDoctorDashboard(); return false;">Doctor Portal Login</a></li>
+          </ul>
+        </div>
+        <div class="footer-col-contact">
+          <h4>Clinic Location</h4>
+          <div class="footer-contact-details">
+            <div class="contact-line">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="3"/></svg>
+              <span>
+                <a href="https://maps.app.goo.gl/VojakXbyZss2igBX6" target="_blank" rel="noopener noreferrer" style="color: inherit;">
+                  Ugf 19, Subash Chandra Bose Complex, opposite charak pathology, Raja Bazar, Chowk, Lucknow, Uttar Pradesh 226003
+                </a>
+              </span>
+            </div>
+            <div class="contact-line" style="margin-top: 0.5rem;">
+              <a href="https://maps.app.goo.gl/VojakXbyZss2igBX6" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display: inline-flex; gap: 0.35rem; align-items: center; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-light);"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                View on Google Maps
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Neuro Harmony Clinic. All rights reserved. Developed for Dr. Priyadarshi Srivastava.</p>
+        <p>Telehealth compliance verified • Powered by Razorpay Secure Payments</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

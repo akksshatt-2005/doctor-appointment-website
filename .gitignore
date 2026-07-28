@@ -1,0 +1,20 @@
+# Node dependencies
+node_modules/
+dist/
+build/
+.env
+
+# Local Databases and binaries
+pgsql/
+pgsql_data/
+pgsql_temp/
+redis/
+*.zip
+dump.rdb
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# App uploads
+backend/uploads/

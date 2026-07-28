@@ -1,0 +1,254 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING_PAYMENT
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum ConsultType {
+  ONLINE
+  CLINIC
+}
+
+model User {
+  id           String        @id @default(uuid()) @db.Uuid
+  phone        String?       @unique
+  email        String?       @unique
+  passwordHash String?       @map("password_hash")
+  role         Role
+  name         String
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
+  
+  doctorProfile DoctorProfile?
+  appointments  Appointment[]
+  feedback      Feedback[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model DoctorProfile {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @unique @map("user_id") @db.Uuid
+  specialization String
+  qualification  String
+  bio            String?
+  experienceYears Int     @map("experience_years")
+  consultationFee Decimal @default(700.00) @map("consultation_fee") @db.Decimal(10, 2)
+  avatarUrl      String?  @map("avatar_url")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slots        AvailabilitySlot[]
+  appointments Appointment[]
+  templates    AvailabilityTemplate[]
+  offlinePrescriptions OfflinePrescription[]
+  medicines    Medicine[]
+
+  @@map("doctor_profiles")
+}
+
+model AvailabilitySlot {
+  id        String   @id @default(uuid()) @db.Uuid
+  doctorId  String   @map("doctor_id") @db.Uuid
+  date      DateTime @db.Date
+  startTime String      @map("start_time") // Store as HH:MM format for simplicity
+  endTime   String      @map("end_time")   // Store as HH:MM format
+  isBooked  Boolean     @default(false) @map("is_booked")
+  consultType ConsultType @default(ONLINE) @map("consult_type")
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
+
+  doctor       DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@unique([doctorId, date, startTime], name: "unique_doctor_slot")
+  @@map("availability_slots")
+}
+
+model AvailabilityTemplate {
+  id          String      @id @default(uuid()) @db.Uuid
+  doctorId    String      @map("doctor_id") @db.Uuid
+  dayOfWeek   Int         @map("day_of_week") // 0 (Sunday) to 6 (Saturday)
+  startTime   String      @map("start_time") // HH:MM
+  endTime     String      @map("end_time")   // HH:MM
+  consultType ConsultType @default(ONLINE) @map("consult_type")
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
+
+  doctor DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@map("availability_templates")
+}
+
+model Appointment {
+  id              String            @id @default(uuid()) @db.Uuid
+  bookingId       String            @unique @map("booking_id") // Human friendly readable ID, e.g. NH-293108
+  patientId       String            @map("patient_id") @db.Uuid
+  doctorId        String            @map("doctor_id") @db.Uuid
+  slotId          String            @map("slot_id") @db.Uuid
+  appointmentDate DateTime          @map("appointment_date") @db.Date
+  slotTime        String            @map("slot_time") // e.g. "05:30 PM"
+  patientName     String            @map("patient_name")
+  patientAge      Int               @map("patient_age")
+  patientEmail    String            @map("patient_email")
+  patientPhone    String            @map("patient_phone")
+  symptoms        String
+  status          AppointmentStatus @default(PENDING_PAYMENT)
+  reportFilePath  String?           @map("report_file_path")
+  videoRoomId     String            @map("video_room_id")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
+
+  patient      User             @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctor       DoctorProfile    @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  slot         AvailabilitySlot @relation(fields: [slotId], references: [id], onDelete: Restrict)
+  payment      Payment?
+  prescription Prescription?
+  feedback     Feedback?
+
+  @@map("appointments")
+}
+
+model Payment {
+  id                 String        @id @default(uuid()) @db.Uuid
+  appointmentId      String        @unique @map("appointment_id") @db.Uuid
+  razorpayOrderId    String        @unique @map("razorpay_order_id")
+  razorpayPaymentId  String?       @unique @map("razorpay_payment_id")
+  razorpaySignature  String?       @map("razorpay_signature")
+  amount             Decimal       @db.Decimal(10, 2)
+  status             PaymentStatus @default(PENDING)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Prescription {
+  id            String   @id @default(uuid()) @db.Uuid
+  appointmentId String   @unique @map("appointment_id") @db.Uuid
+  diagnosis     String
+  medications   Json     @default("[]") // Array of {name, dosage, freq}
+  advice        String?
+  pdfUrl        String?  @map("pdf_url")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("prescriptions")
+}
+
+model Feedback {
+  id            String   @id @default(uuid()) @db.Uuid
+  appointmentId String   @unique @map("appointment_id") @db.Uuid
+  patientId     String   @map("patient_id") @db.Uuid
+  rating        Int
+  comment       String?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  patient     User        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("feedback")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid()) @db.Uuid
+  phone     String
+  code      String
+  expiresAt DateTime @map("expires_at") @db.Timestamptz()
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("otp_codes")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String   // e.g. "sms", "email", "system"
+  recipient String   // phone number or email
+  message   String
+  status    String   @default("pending") // "pending", "sent", "failed"
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model OfflinePrescription {
+  id            String   @id @default(uuid()) @db.Uuid
+  doctorId      String   @map("doctor_id") @db.Uuid
+  patientName   String   @map("patient_name")
+  patientAge    Int      @map("patient_age")
+  patientGender String   @map("patient_gender")
+  diagnosis     String
+  medications   Json     @default("[]") // Array of {name, dosage, frequency}
+  advice        String?
+  requiredTests String?  @map("required_tests")
+  pageWidth     Int      @default(800)  // CSS px
+  pageHeight    Int      @default(1120) // CSS px
+  fontSize      Float    @default(13)   // CSS px
+  marginSize    Int      @default(40)   // CSS px
+  rowSpacing    Int      @default(12)   // CSS px
+  useLetterhead Boolean  @default(false) @map("use_letterhead")
+  referenceId     String?  @map("reference_id")
+  patientPhone    String?  @map("patient_phone")
+  chiefComplaints String?  @map("chief_complaints")
+  bp              String?
+  pulse           String?
+  weight          String?
+  followUpDate    DateTime? @map("follow_up_date") @db.Timestamptz()
+  consultDate     DateTime? @map("consult_date") @db.Timestamptz()
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  doctor        DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@map("offline_prescriptions")
+}
+
+model Medicine {
+  id          String   @id @default(uuid()) @db.Uuid
+  doctorId    String   @map("doctor_id") @db.Uuid
+  name        String
+  dosage      String?
+  composition String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  doctor    DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, name])
+  @@map("medicines")
+}
+
+

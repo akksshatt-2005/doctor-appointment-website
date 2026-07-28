@@ -1,0 +1,652 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #0f766e;
+  --primary-hover: #0d5e57;
+  --primary-light: #f0fdfa;
+  --accent: #2dd4bf;
+  --neutral-dark: #0f172a;
+  --neutral-light: #f8fafc;
+  --neutral-body: #64748b;
+  --neutral-border: #cbd5e1;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --font-family: 'Plus Jakarta Sans', sans-serif;
+  --border-radius: 12px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  background-color: #f1f5f9;
+  color: var(--neutral-dark);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Beautiful custom input fields */
+input, textarea, select {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--neutral-border);
+  border-radius: 8px;
+  background-color: var(--white);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+}
+
+/* Smooth Premium Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--white);
+  border-color: var(--neutral-border);
+  color: var(--neutral-dark);
+}
+
+.btn-secondary:hover {
+  background-color: var(--neutral-light);
+  border-color: var(--neutral-body);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: var(--white);
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: var(--white);
+}
+
+.btn-success:hover {
+  background-color: #059669;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Glassmorphism containers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--border-radius);
+}
+
+/* Dynamic Live Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  line-height: 1;
+}
+
+.badge-success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-info {
+  background-color: #e0f2fe;
+  color: #075985;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* --- Video Consultation Room (Simulated WebRTC) --- */
+#video-view {
+  background-color: #0b0f19; /* Dark environment for video calls */
+  color: var(--white);
+  padding: 2rem;
+  flex: 1;
+}
+
+.video-layout {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 1.5rem;
+  height: auto;
+}
+
+.video-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+#jaas-container {
+  width: 100%;
+  height: 780px;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  margin-bottom: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 1023px) {
+  .video-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  #jaas-container {
+    height: 480px;
+  }
+}
+
+@media (max-width: 767px) {
+  #jaas-container {
+    height: 360px;
+  }
+}
+
+.video-streams-grid {
+  flex-grow: 1;
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #1e293b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.remote-stream-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1e293b;
+  overflow: hidden;
+}
+
+.video-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stream-overlay-info {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.stream-overlay-info span {
+  width: 8px;
+  height: 8px;
+  background-color: var(--success);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.local-stream-container {
+  width: 180px;
+  height: 135px;
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background-color: #0f172a;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.local-stream-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.local-stream-avatar {
+  font-size: 2rem;
+  color: #64748b;
+  display: none;
+}
+
+.local-stream-container.camera-off .local-stream-canvas {
+  display: none;
+}
+
+.local-stream-container.camera-off .local-stream-avatar {
+  display: block;
+}
+
+.video-controls-bar {
+  background-color: #1e293b;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.call-timer {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.call-timer::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background-color: var(--danger);
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+.controls-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.control-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  background-color: #334155;
+  color: var(--white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+}
+
+.control-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.control-btn:hover {
+  background-color: #475569;
+}
+
+.control-btn.active {
+  background-color: var(--white);
+  color: #0f172a;
+}
+
+.control-btn.btn-hangup {
+  background-color: var(--danger);
+}
+
+.control-btn.btn-hangup:hover {
+  background-color: #dc2626;
+  transform: scale(1.05);
+}
+
+.call-info-badge {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Sidebar Chat inside consultation room */
+.consultation-sidebar {
+  background-color: #1e293b;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  height: 780px; /* Default height to match #jaas-container */
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 1023px) {
+  .consultation-sidebar {
+    height: 500px;
+  }
+}
+
+@media (max-width: 767px) {
+  .consultation-sidebar {
+    height: 400px;
+  }
+}
+
+.sidebar-tab-header {
+  display: flex;
+  background-color: #0f172a;
+  border-bottom: 1px solid #334155;
+  width: 100%;
+}
+
+.sidebar-tab {
+  flex: 1;
+  padding: 0.75rem 0.25rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.sidebar-tab.active {
+  color: var(--white);
+  border-bottom: 2px solid var(--accent);
+  background-color: #1e293b;
+}
+
+.sidebar-content-area {
+  flex-grow: 1;
+  padding: 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Consultation Chat Room UI */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-messages {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  max-height: 350px;
+  padding-right: 0.25rem;
+}
+
+.chat-bubble {
+  max-width: 85%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.chat-bubble.doctor {
+  align-self: flex-start;
+  background-color: #334155;
+  color: #f8fafc;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-bubble.patient {
+  align-self: flex-end;
+  background-color: var(--primary);
+  color: var(--white);
+  border-bottom-right-radius: 4px;
+}
+
+.chat-bubble-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  opacity: 0.65;
+}
+
+.chat-input-box {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chat-input-box input {
+  flex-grow: 1;
+  background-color: #0f172a;
+  border: 1px solid #334155;
+  color: var(--white);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+.chat-input-box input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.chat-send-btn {
+  background-color: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chat-send-btn:hover {
+  background-color: var(--accent);
+}
+
+/* Patient Case Details view inside video chat side bar */
+.case-details-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.case-details-section {
+  background-color: #0f172a;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #334155;
+}
+
+.case-details-section h4 {
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 0.25rem;
+}
+
+.case-details-section p {
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.case-details-section .patient-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.meta-row span.lbl {
+  color: #64748b;
+}
+
+.meta-row span.val {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+@media print {
+  @page {
+    size: portrait;
+    margin: 0 !important;
+  }
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+    background-color: #fff !important;
+  }
+  
+  /* Hide the rest of the application layout panels */
+  .no-print,
+  header,
+  nav,
+  form {
+    display: none !important;
+  }
+
+  /* Reset all parent container layouts to be simple transparent blocks */
+  #root,
+  main,
+  .offline-rx-workspace,
+  .workspace-split,
+  .print-preview-column,
+  .print-preview-container-wrapper {
+    display: block !important;
+    float: none !important;
+    position: static !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Force the prescription card itself to be exactly 1 portrait page height */
+  .printable-prescription-preview {
+    position: absolute !important;
+    left: 50% !important;
+    top: 0 !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+    border: none !important;
+    background-color: #fff !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

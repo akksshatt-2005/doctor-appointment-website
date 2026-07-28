@@ -1,0 +1,80 @@
+{
+  "reviews": [
+    {
+      "date": "02 Jul 2026",
+      "name": "Rahul Verma",
+      "rating": 5,
+      "comment": "Excellent virtual consultation! Dr. Priyadarshi was extremely patient and analyzed my insomnia triggers step-by-step. I slept much better following his guidelines."
+    },
+    {
+      "date": "28 Jun 2026",
+      "name": "Priya Sen",
+      "rating": 5,
+      "comment": "Highly recommended. His advice for managing work-related anxiety and panic attacks was extremely structured and effective. Very empathetic doctor."
+    },
+    {
+      "date": "15 Jun 2026",
+      "name": "Amit Singh",
+      "rating": 4,
+      "comment": "Consulted online for stress-induced tension headaches. The diagnosis was precise, and he suggested quick postural changes that helped reduce the strain."
+    },
+    {
+      "date": "10 Jun 2026",
+      "name": "Meera Nair",
+      "rating": 5,
+      "comment": "Superb experience. The Razorpay process was very smooth, and the video quality was crystal clear. The digital prescription was generated instantly."
+    }
+  ],
+  "bookings": [
+    {
+      "id": "NH-293108",
+      "date": "Wed Jul 08 2026",
+      "amount": 700,
+      "slotId": "18:00",
+      "status": "scheduled",
+      "paymentId": "pay_Mock78A12B",
+      "slotLabel": "06:00 PM",
+      "patientAge": "42",
+      "patientName": "Sunita Sharma",
+      "patientEmail": "sunita@gmail.com",
+      "patientPhone": "+91 99123 45678",
+      "prescription": null,
+      "patientReports": null,
+      "patientSymptoms": "Difficulty falling asleep, panic attacks in morning and severe mood changes."
+    },
+    {
+      "id": "NH-123405",
+      "date": "Mon Jul 06 2026",
+      "amount": 700,
+      "slotId": "17:30",
+      "status": "completed",
+      "paymentId": "pay_Mock56Z09P",
+      "slotLabel": "05:30 PM",
+      "patientAge": "31",
+      "patientName": "Karan Mehra",
+      "patientEmail": "karan@mehra.org",
+      "patientPhone": "+91 98989 12345",
+      "prescription": {
+        "date": "06/07/2026",
+        "rxId": "RX-7712-NH",
+        "advice": "Practice shoulder rolls every 2 hours, set blue-light filter on laptops, stay hydrated.",
+        "diagnosis": "Cervicogenic Headache with General Stress Syndrome",
+        "medications": [
+          {
+            "freq": "1-0-1 (after meals)",
+            "name": "Tab. Paracetamol",
+            "dosage": "650mg"
+          },
+          {
+            "freq": "0-0-1 (bedtime)",
+            "name": "Cap. Pregabalin",
+            "dosage": "75mg"
+          }
+        ]
+      },
+      "patientReports": "mri_cervical_spine.pdf",
+      "patientSymptoms": "Chronic stress, tension headache radiating down neck, poor concentration."
+    }
+  ],
+  "patients": {}
+}

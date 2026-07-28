@@ -1,0 +1,83 @@
+[2026-07-07T20:06:24.719Z] TO: 8303449183 | MSG: Your Neuro Harmony verification OTP is 572088. Valid for 5 minutes. Do not share this code.
+[2026-07-07T20:07:56.165Z] TO: 9543210987 | MSG: Your Neuro Harmony verification OTP is 220006. Valid for 5 minutes. Do not share this code.
+[2026-07-07T20:07:57.263Z] TO: 9543210987 | MSG: Your consultation with Dr. Priyadarshi on Tue Jul 07 2026 at 09:00 PM is confirmed. Booking ID: NH-149919.
+[2026-07-07T20:08:00.410Z] TO: 9543210987 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-149919.pdf
+[2026-07-07T20:12:41.888Z] TO: 9012345678 | MSG: Your Neuro Harmony verification OTP is 174530. Valid for 5 minutes. Do not share this code.
+[2026-07-07T20:13:01.237Z] TO: 9012345678 | MSG: Your Neuro Harmony verification OTP is 324807. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:09:15.023Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 350166. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:10:09.526Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 191135. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:10:10.871Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 426007. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:10:11.792Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 447991. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:10:32.154Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 619690. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:12:18.435Z] TO: 9543210987 | MSG: Your Neuro Harmony verification OTP is 824600. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:12:20.140Z] TO: 9543210987 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 08 2026 at 09:00 PM is confirmed. Booking ID: NH-349827.
+[2026-07-08T16:12:23.283Z] TO: 9543210987 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-349827.pdf
+[2026-07-08T16:12:29.803Z] TO: 9999999999 | MSG: Your Neuro Harmony verification OTP is 624071. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:12:42.447Z] TO: 9999999999 | MSG: Your Neuro Harmony verification OTP is 415874. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:12:42.770Z] TO: 9999999999 | MSG: Your Neuro Harmony verification OTP is 465705. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:12:43.102Z] TO: 9999999999 | MSG: Your Neuro Harmony verification OTP is 710215. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:12:43.419Z] TO: 9999999999 | MSG: Your Neuro Harmony verification OTP is 239025. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:12:50.029Z] TO: 9912345678 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-796784.pdf
+[2026-07-08T16:12:50.747Z] TO: 9912345678 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 08 2026 at 04:00 PM is confirmed. Booking ID: NH-850167.
+[2026-07-08T16:13:05.846Z] TO: 9912345678 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 08 2026 at 02:00 PM is confirmed. Booking ID: NH-928777.
+[2026-07-08T16:13:06.066Z] TO: 9012345678 | MSG: Your Neuro Harmony verification OTP is 394171. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:13:32.247Z] TO: 9012345678 | MSG: Your Neuro Harmony verification OTP is 511880. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:16:19.341Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 461710. Valid for 5 minutes. Do not share this code.
+[2026-07-08T16:50:35.011Z] TO: 9912345678 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-796784.pdf
+[2026-07-08T16:51:15.060Z] TO: 9765432100 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-309123.pdf
+[2026-07-08T17:15:02.812Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 527828. Valid for 5 minutes. Do not share this code.
+[2026-07-08T17:43:54.337Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 250623. Valid for 5 minutes. Do not share this code.
+[2026-07-08T17:47:24.487Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-646571.pdf
+[2026-07-08T18:14:02.810Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 271613. Valid for 5 minutes. Do not share this code.
+[2026-07-08T18:16:00.054Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Tue Jul 07 2026 at 05:30 PM is confirmed. Booking ID: NH-719072.
+[2026-07-08T18:18:50.893Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 687167. Valid for 5 minutes. Do not share this code.
+[2026-07-08T18:20:05.092Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 08 2026 at 05:00 PM is confirmed. Booking ID: NH-172812.
+[2026-07-08T18:22:21.082Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-172812.pdf
+[2026-07-08T18:35:23.174Z] TO: 8303449183 | MSG: Your Neuro Harmony verification OTP is 127606. Valid for 5 minutes. Do not share this code.
+[2026-07-08T18:36:21.620Z] TO: 8303449183 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 08 2026 at 08:30 PM is confirmed. Booking ID: NH-672910.
+[2026-07-09T10:07:18.369Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 811880. Valid for 5 minutes. Do not share this code.
+[2026-07-09T10:09:45.676Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 08 2026 at 06:00 PM is confirmed. Booking ID: NH-213998.
+[2026-07-09T10:11:36.908Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 08 2026 at 08:30 PM is confirmed. Booking ID: NH-868444.
+[2026-07-09T10:15:22.562Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 919077. Valid for 5 minutes. Do not share this code.
+[2026-07-09T10:17:01.825Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Thu Jul 09 2026 at 05:00 PM is confirmed. Booking ID: NH-465247.
+[2026-07-09T10:23:39.016Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-465247.pdf
+[2026-07-09T13:59:02.552Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi starts in 1 hour (at 08:30 PM). Booking ID: NH-868444
+[2026-07-09T16:33:02.741Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 720186. Valid for 5 minutes. Do not share this code.
+[2026-07-09T16:34:10.370Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 08 2026 at 05:00 PM is confirmed. Booking ID: NH-745816.
+[2026-07-09T16:42:56.788Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 818238. Valid for 5 minutes. Do not share this code.
+[2026-07-09T16:43:36.902Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 535399. Valid for 5 minutes. Do not share this code.
+[2026-07-09T17:00:38.701Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 805061. Valid for 5 minutes. Do not share this code.
+[2026-07-09T17:02:30.170Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-465247.pdf
+[2026-07-09T17:17:26.711Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 357473. Valid for 5 minutes. Do not share this code.
+[2026-07-09T17:35:23.934Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 392508. Valid for 5 minutes. Do not share this code.
+[2026-07-09T17:39:18.014Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-465247.pdf
+[2026-07-09T17:46:54.641Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/prescriptions/prescription-NH-465247.pdf
+[2026-07-09T17:47:42.135Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/1783619260295-prescription-NH-465247.pdf
+[2026-07-09T17:47:54.502Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/1783619272198-prescription-NH-465247.pdf
+[2026-07-09T17:50:56.697Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/1783619454747-prescription-NH-465247.pdf
+[2026-07-09T17:54:25.977Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/1783619664100-prescription-NH-465247.pdf
+[2026-07-09T18:13:49.727Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 241168. Valid for 5 minutes. Do not share this code.
+[2026-07-09T18:15:40.831Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 08 2026 at 08:00 PM is confirmed. Booking ID: NH-971369.
+[2026-07-09T18:18:23.895Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Thu Jul 09 2026 at 05:30 PM is confirmed. Booking ID: NH-528616.
+[2026-07-09T18:22:51.091Z] TO: 8090589401 | MSG: Your prescription is ready. Download PDF: http://localhost:5000/uploads/1783621368984-prescription-NH-528616.pdf
+[2026-07-10T15:15:34.217Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 163776. Valid for 5 minutes. Do not share this code.
+[2026-07-10T15:21:27.686Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 350187. Valid for 5 minutes. Do not share this code.
+[2026-07-10T15:22:36.037Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Fri Jul 10 2026 at 05:00 PM is confirmed. Booking ID: NH-942159.
+[2026-07-10T18:02:51.194Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 617083. Valid for 5 minutes. Do not share this code.
+[2026-07-10T18:04:28.867Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Fri Jul 10 2026 at 05:30 PM is confirmed. Booking ID: NH-837961.
+[2026-07-10T18:42:45.595Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 980283. Valid for 5 minutes. Do not share this code.
+[2026-07-10T18:50:04.658Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Fri Jul 10 2026 at 08:30 PM is confirmed. Booking ID: NH-200698.
+[2026-07-10T19:02:38.039Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 793490. Valid for 5 minutes. Do not share this code.
+[2026-07-10T19:03:49.156Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi on Fri Jul 10 2026 at 06:00 PM is confirmed. Booking ID: NH-165696.
+[2026-07-16T16:23:12.954Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 369155. Valid for 5 minutes. Do not share this code.
+[2026-07-16T16:32:22.948Z] TO: 9543210987 | MSG: Your Neuro Harmony verification OTP is 369493. Valid for 5 minutes. Do not share this code.
+[2026-07-16T16:35:57.973Z] TO: 9543210987 | MSG: Your consultation with Dr. Priyadarshi on Wed Jul 15 2026 at 11:00 AM is confirmed. Booking ID: NH-171269.
+[2026-07-20T16:13:07.403Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 243541. Valid for 5 minutes. Do not share this code.
+[2026-07-20T16:13:42.148Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 158331. Valid for 5 minutes. Do not share this code.
+[2026-07-20T16:29:36.423Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 447851. Valid for 5 minutes. Do not share this code.
+[2026-07-20T16:31:27.916Z] TO: 9912345678 | MSG: Your Neuro Harmony verification OTP is 100532. Valid for 5 minutes. Do not share this code.
+[2026-07-20T16:33:05.007Z] TO: 9912345678 | MSG: Your Neuro Harmony verification OTP is 815170. Valid for 5 minutes. Do not share this code.
+[2026-07-20T16:33:30.263Z] TO: 8090589401 | MSG: Your Neuro Harmony verification OTP is 105811. Valid for 5 minutes. Do not share this code.
+[2026-07-21T12:55:01.198Z] TO: 8090589401 | MSG: Your consultation with Dr. Priyadarshi starts in 1 hour (at 07:30 PM). Booking ID: NH-413793
+[2026-07-21T13:55:01.092Z] TO: 9912345678 | MSG: Your consultation with Dr. Priyadarshi starts in 1 hour (at 08:30 PM). Booking ID: NH-118013
+[2026-07-24T17:29:26.722Z] TO: 8303449183 | MSG: Your consultation with Dr. Priyadarshi on Thu Jul 23 2026 at 05:00 PM is confirmed. Booking ID: NH-911861.
