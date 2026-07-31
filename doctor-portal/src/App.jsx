@@ -513,10 +513,9 @@ export default function App() {
   };
 
   const removeOfflineMedicationRow = (index) => {
-    if (offlineForm.medications.length === 1) return;
     setOfflineForm(prev => ({
       ...prev,
-      medications: prev.medications.filter((_, i) => i !== index)
+      medications: (prev.medications || []).filter((_, i) => i !== index)
     }));
   };
 
