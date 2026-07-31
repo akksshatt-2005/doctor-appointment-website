@@ -1971,89 +1971,147 @@ export default function App() {
                     </button>
                   </div>
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {offlineForm.medications.map((med, index) => (
-                      <div key={index} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr 40px 40px', gap: '0.5rem', alignItems: 'center' }}>
-                        <input 
-                          type="text" 
-                          placeholder="Medicine Name (e.g. Dolo)"
-                          value={med.name}
-                          onChange={e => handleOfflineMedicationChange(index, 'name', e.target.value)}
-                          required
-                        />
-                        <input 
-                          type="text" 
-                          placeholder="Composition (Optional)"
-                          value={med.composition || ''}
-                          onChange={e => handleOfflineMedicationChange(index, 'composition', e.target.value)}
-                        />
-                        <input 
-                          type="text" 
-                          placeholder="Dosage (Optional)"
-                          value={med.dosage}
-                          onChange={e => handleOfflineMedicationChange(index, 'dosage', e.target.value)}
-                        />
-                        <input 
-                          type="text" 
-                          placeholder="Frequency (e.g. Once daily)"
-                          value={med.frequency}
-                          onChange={e => handleOfflineMedicationChange(index, 'frequency', e.target.value)}
-                          required
-                        />
-                        <button 
-                          type="button" 
-                          className="btn btn-secondary" 
-                          onClick={async () => {
-                            if (!med.name.trim()) {
-                              alert('Please fill out the Medicine Name to save to database.');
-                              return;
-                            }
-                            try {
-                              const response = await fetch(`${API_BASE_URL}/doctor/medicines`, {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': `Bearer ${token}`
-                                },
-                                body: JSON.stringify({
-                                  name: med.name.trim(),
-                                  composition: med.composition ? med.composition.trim() : null,
-                                  dosage: med.dosage ? med.dosage.trim() : null
-                                })
-                              });
-                              const data = await response.json();
-                              if (data.success) {
-                                setMedicinesList(prev => {
-                                  const exists = prev.some(m => m.name.toLowerCase() === data.medicine.name.toLowerCase());
-                                  if (exists) {
-                                    return prev.map(m => m.name.toLowerCase() === data.medicine.name.toLowerCase() ? data.medicine : m);
+                      <div 
+                        key={index} 
+                        style={{ 
+                          border: '1px solid var(--neutral-border)', 
+                          borderRadius: '8px', 
+                          overflow: 'hidden', 
+                          backgroundColor: 'var(--white)',
+                          boxShadow: 'var(--shadow-sm)',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}
+                      >
+                        {/* Big Section Bar (Header Bar) */}
+                        <div style={{ 
+                          backgroundColor: 'var(--primary-light)', 
+                          padding: '0.6rem 1rem', 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          borderBottom: '1px solid var(--neutral-border)'
+                        }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--primary)' }}>
+                            💊 MEDICINE #{index + 1}
+                          </span>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            {/* Save to DB Button */}
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={async () => {
+                                if (!med.name.trim()) {
+                                  alert('Please fill out the Medicine Name to save to database.');
+                                  return;
+                                }
+                                try {
+                                  const response = await fetch(`${API_BASE_URL}/doctor/medicines`, {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({
+                                      name: med.name.trim(),
+                                      composition: med.composition ? med.composition.trim() : null,
+                                      dosage: med.dosage ? med.dosage.trim() : null
+                                    })
+                                  });
+                                  const data = await response.json();
+                                  if (data.success) {
+                                    setMedicinesList(prev => {
+                                      const exists = prev.some(m => m.name.toLowerCase() === data.medicine.name.toLowerCase());
+                                      if (exists) {
+                                        return prev.map(m => m.name.toLowerCase() === data.medicine.name.toLowerCase() ? data.medicine : m);
+                                      }
+                                      return [...prev, data.medicine].sort((a, b) => a.name.localeCompare(b.name));
+                                    });
+                                    alert(`"${med.name}" saved to Medicine Database!`);
+                                  } else {
+                                    alert(data.message || 'Failed to save to database.');
                                   }
-                                  return [...prev, data.medicine].sort((a, b) => a.name.localeCompare(b.name));
-                                });
-                                alert(`"${med.name}" saved to Medicine Database!`);
-                              } else {
-                                alert(data.message || 'Failed to save to database.');
-                              }
-                            } catch (err) {
-                              alert('Error saving to database.');
-                              console.error(err);
-                            }
-                          }}
-                          style={{ padding: '0.5rem', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-                          title="Save to Medicine Database"
-                        >
-                          💾
-                        </button>
-                        <button 
-                          type="button" 
-                          className="btn btn-danger" 
-                          onClick={() => removeOfflineMedicationRow(index)}
-                          style={{ padding: '0.5rem', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-                          disabled={offlineForm.medications.length === 1}
-                          title="Remove Row"
-                        >
-                          🗑️
-                        </button>
+                                } catch (err) {
+                                  alert('Error saving to database.');
+                                  console.error(err);
+                                }
+                              }}
+                              style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                              title="Save this medicine details to your database"
+                            >
+                              💾 Save to DB
+                            </button>
+                            
+                            {/* Remove Button */}
+                            {offlineForm.medications.length > 1 && (
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => removeOfflineMedicationRow(index)}
+                                style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                                title="Remove this medicine row"
+                              >
+                                🗑️ Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Stacked Inputs */}
+                        <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          {/* Medicine Name */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Medicine Name</label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. Tab. Paracetamol 650mg"
+                              value={med.name}
+                              onChange={e => handleOfflineMedicationChange(index, 'name', e.target.value)}
+                              required
+                              style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
+                            />
+                          </div>
+
+                          {/* Composition */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Composition (Generic Name)</label>
+                            <input 
+                              type="text" 
+                              placeholder="Composition (Optional)"
+                              value={med.composition || ''}
+                              onChange={e => handleOfflineMedicationChange(index, 'composition', e.target.value)}
+                              style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
+                            />
+                          </div>
+
+                          {/* Grid for Dosage & Frequency side by side inside the card */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Dosage</label>
+                              <input 
+                                type="text" 
+                                placeholder="e.g. 1 Tablet (Optional)"
+                                value={med.dosage}
+                                onChange={e => handleOfflineMedicationChange(index, 'dosage', e.target.value)}
+                                style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Frequency & Instructions</label>
+                              <input 
+                                type="text" 
+                                placeholder="e.g. 1-0-1 (after meals)"
+                                value={med.frequency}
+                                onChange={e => handleOfflineMedicationChange(index, 'frequency', e.target.value)}
+                                required
+                                style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
                       </div>
                     ))}
                   </div>
@@ -2399,54 +2457,38 @@ export default function App() {
                             <span style={{ fontSize: '0.85em', fontWeight: 800, color: '#1e293b', letterSpacing: '0.05em' }}>PRESCRIBED MEDICATIONS</span>
                           </div>
 
-                          {/* Stacked Medications List with Vertical Sidebars */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: `${offlineLayout.rowSpacing}px`, marginBottom: '1.5rem' }}>
-                            {offlineForm.medications.map((med, idx) => (
-                              <div 
-                                key={idx} 
-                                style={{ 
-                                  display: 'flex', 
-                                  border: '1px solid #cbd5e1', 
-                                  borderRadius: '6px', 
-                                  overflow: 'hidden', 
-                                  backgroundColor: '#f8fafc',
-                                  pageBreakInside: 'avoid'
-                                }}
-                              >
-                                {/* Big Section Bar (Colored Left Border) */}
-                                <div style={{ width: '6px', backgroundColor: '#0f766e' }}></div>
-                                <div style={{ flex: 1, padding: '0.6rem 0.8rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                                  
-                                  {/* 1. Medicine Name */}
-                                  <div style={{ fontWeight: 800, color: '#000000', fontSize: '1.05em' }}>
-                                    {med.name || '__________________'}
-                                  </div>
-                                  
-                                  {/* 2. Composition */}
-                                  {med.composition && med.composition.trim() && (
-                                    <div style={{ fontSize: '0.85em', color: '#b91c1c', fontWeight: 700, fontStyle: 'italic' }}>
-                                      ({med.composition.trim()})
-                                    </div>
-                                  )}
-                                  
-                                  {/* 3. Dosage */}
-                                  {med.dosage && med.dosage.trim() && (
-                                    <div style={{ fontSize: '0.85em', color: '#334155', fontWeight: 700 }}>
-                                      <strong style={{ color: '#64748b', fontSize: '0.78em', marginRight: '0.5rem' }}>DOSAGE:</strong> 
-                                      {med.dosage}
-                                    </div>
-                                  )}
-
-                                  {/* 4. Frequency */}
-                                  <div style={{ fontSize: '0.85em', color: '#334155', fontWeight: 700 }}>
-                                    <strong style={{ color: '#64748b', fontSize: '0.78em', marginRight: '0.5rem' }}>FREQUENCY & INSTRUCTIONS:</strong> 
-                                    {med.frequency || '_______________'}
-                                  </div>
-                                  
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                          {/* Medications Grid */}
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9em', marginBottom: '1.5rem' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '2.5px solid #0f766e', color: '#000000', textAlign: 'left', backgroundColor: '#ffffff' }}>
+                                <th style={{ padding: `${offlineLayout.rowSpacing / 2}px 10px`, fontSize: '0.8em', fontWeight: 800 }}>MEDICINE NAME</th>
+                                <th style={{ padding: `${offlineLayout.rowSpacing / 2}px 10px`, fontSize: '0.8em', fontWeight: 800 }}>DOSAGE</th>
+                                <th style={{ padding: `${offlineLayout.rowSpacing / 2}px 10px`, fontSize: '0.8em', fontWeight: 800 }}>FREQUENCY & INSTRUCTIONS</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {offlineForm.medications.map((med, idx) => (
+                                <tr 
+                                  key={idx} 
+                                  style={{ 
+                                    backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#fff',
+                                    borderBottom: '1px solid #f1f5f9'
+                                  }}
+                                >
+                                  <td style={{ padding: `${offlineLayout.rowSpacing}px 10px`, color: '#000000' }}>
+                                    <div style={{ fontWeight: 800 }}>{med.name || '__________________'}</div>
+                                    {med.composition && med.composition.trim() && (
+                                      <div style={{ fontSize: '0.85em', color: '#b91c1c', fontWeight: 700, fontStyle: 'italic', marginTop: '0.15rem' }}>
+                                        ({med.composition.trim()})
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: `${offlineLayout.rowSpacing}px 10px`, color: '#000000', fontWeight: 700 }}>{med.dosage || ''}</td>
+                                  <td style={{ padding: `${offlineLayout.rowSpacing}px 10px`, color: '#000000', fontWeight: 700 }}>{med.frequency || '_______________'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
 
                       </div>
