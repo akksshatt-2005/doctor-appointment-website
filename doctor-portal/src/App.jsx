@@ -36,6 +36,7 @@ export default function App() {
   // Dashboard view toggle and Offline prescription maker state
   const [dashboardView, setDashboardView] = useState('appointments'); // 'appointments' or 'offline-rx'
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeSearchIndex, setActiveSearchIndex] = useState(null);
   const [offlineRxList, setOfflineRxList] = useState([]);
   const [loadingOfflineRx, setLoadingOfflineRx] = useState(false);
   const [selectedOfflineRxId, setSelectedOfflineRxId] = useState(null);
@@ -2061,17 +2062,100 @@ export default function App() {
 
                         {/* Stacked Inputs */}
                         <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                          {/* Medicine Name */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          {/* Medicine Name with Autocomplete Suggestions */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', position: 'relative' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Medicine Name</label>
                             <input 
                               type="text" 
                               placeholder="e.g. Tab. Paracetamol 650mg"
                               value={med.name}
-                              onChange={e => handleOfflineMedicationChange(index, 'name', e.target.value)}
+                              onChange={e => {
+                                handleOfflineMedicationChange(index, 'name', e.target.value);
+                                setActiveSearchIndex(index);
+                              }}
+                              onFocus={() => setActiveSearchIndex(index)}
+                              onBlur={() => {
+                                // Small timeout to allow onMouseDown on dropdown items to fire first
+                                setTimeout(() => {
+                                  setActiveSearchIndex(null);
+                                }, 150);
+                              }}
                               required
                               style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
                             />
+                            
+                            {/* Autocomplete Dropdown list */}
+                            {activeSearchIndex === index && med.name.trim() !== '' && (
+                              <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                backgroundColor: '#fff',
+                                border: '1px solid var(--neutral-border)',
+                                borderRadius: '6px',
+                                maxHeight: '180px',
+                                overflowY: 'auto',
+                                zIndex: 100,
+                                boxShadow: 'var(--shadow-lg)'
+                              }}>
+                                {(() => {
+                                  const filtered = medicinesList.filter(m => 
+                                    m.name.toLowerCase().includes(med.name.toLowerCase()) ||
+                                    (m.composition && m.composition.toLowerCase().includes(med.name.toLowerCase()))
+                                  );
+                                  if (filtered.length === 0) {
+                                    return (
+                                      <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--neutral-body)', fontStyle: 'italic' }}>
+                                        No matching medicines in DB.
+                                      </div>
+                                    );
+                                  }
+                                  return filtered.map(m => (
+                                    <div 
+                                      key={m.id}
+                                      onMouseDown={() => {
+                                        // Use onMouseDown so it fires BEFORE the input onBlur event closes the list
+                                        setOfflineForm(prev => {
+                                          const updated = [...prev.medications];
+                                          updated[index] = {
+                                            name: m.name,
+                                            composition: m.composition || '',
+                                            dosage: m.dosage || '',
+                                            frequency: updated[index].frequency || ''
+                                          };
+                                          return { ...prev, medications: updated };
+                                        });
+                                        setActiveSearchIndex(null);
+                                      }}
+                                      style={{
+                                        padding: '0.5rem 0.75rem',
+                                        fontSize: '0.8rem',
+                                        cursor: 'pointer',
+                                        borderBottom: '1px solid #f1f5f9',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        backgroundColor: '#fff'
+                                      }}
+                                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
+                                    >
+                                      <div>
+                                        <strong style={{ color: 'var(--neutral-dark)' }}>{m.name}</strong>
+                                        {m.composition && (
+                                          <span style={{ fontSize: '0.75rem', color: '#b91c1c', fontStyle: 'italic', marginLeft: '0.35rem' }}>
+                                            ({m.composition})
+                                          </span>
+                                        )}
+                                      </div>
+                                      {m.dosage && (
+                                        <span style={{ fontSize: '0.72rem', color: 'var(--neutral-body)' }}>{m.dosage}</span>
+                                      )}
+                                    </div>
+                                  ));
+                                })()}
+                              </div>
+                            )}
                           </div>
 
                           {/* Composition */}
