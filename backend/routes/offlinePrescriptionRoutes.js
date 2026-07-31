@@ -3,7 +3,8 @@ import { requireAuth, requireRole } from '../middleware/authMiddleware.js';
 import {
   createOfflinePrescription,
   getOfflinePrescriptions,
-  deleteOfflinePrescription
+  deleteOfflinePrescription,
+  getNextReferenceId
 } from '../controllers/offlinePrescriptionController.js';
 
 const router = express.Router();
@@ -11,6 +12,7 @@ const router = express.Router();
 // Require both authentication and DOCTOR role for all offline prescription endpoints
 router.use(requireAuth, requireRole('DOCTOR'));
 
+router.get('/doctor/offline-prescriptions/next-reference', getNextReferenceId);
 router.post('/doctor/offline-prescriptions', createOfflinePrescription);
 router.get('/doctor/offline-prescriptions', getOfflinePrescriptions);
 router.delete('/doctor/offline-prescriptions/:id', deleteOfflinePrescription);

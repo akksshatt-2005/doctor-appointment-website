@@ -214,6 +214,24 @@ export default function App() {
     }
   };
 
+  // Fetch next reference ID from API
+  const fetchNextReferenceId = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/doctor/offline-prescriptions/next-reference`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setOfflineForm(prev => ({ ...prev, referenceId: data.nextReferenceId }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch next reference ID:', err);
+    }
+  };
+
   // Fetch medicines in the doctor's database
   const fetchMedicines = async () => {
     if (!token) return;
@@ -355,6 +373,7 @@ export default function App() {
       if (data.success) {
         alert(selectedOfflineRxId ? 'Offline prescription updated successfully!' : 'Offline prescription created successfully!');
         setSelectedOfflineRxId(data.prescription.id);
+        setOfflineForm(prev => ({ ...prev, referenceId: data.prescription.referenceId || '' }));
         fetchOfflinePrescriptions();
       } else {
         alert(data.message || 'Failed to save offline prescription.');
@@ -513,6 +532,12 @@ export default function App() {
       socketInstance.disconnect();
     };
   }, [token]);
+
+  useEffect(() => {
+    if (dashboardView === 'offline-rx' && !selectedOfflineRxId) {
+      fetchNextReferenceId();
+    }
+  }, [dashboardView, selectedOfflineRxId, token]);
 
   // Video calling media stream handlers & triggers
   const startMedia = async () => {
@@ -1625,7 +1650,7 @@ export default function App() {
                 {/* Reference ID & Consultation Date Row */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Reference ID / Slip No (Manual)</label>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Reference ID (Auto-Generated / Editable)</label>
                     <input 
                       type="text" 
                       placeholder="e.g. 104/2026"

@@ -50,6 +50,41 @@ export async function createOfflinePrescription(req, res) {
       });
     }
 
+    let finalReferenceId = referenceId || null;
+    if (!id && !finalReferenceId) {
+      // Auto-generate referenceId
+      const currentYear = new Date().getFullYear();
+      const startOfYear = new Date(currentYear, 0, 1);
+      const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+      const prescriptionsInYear = await prisma.offlinePrescription.findMany({
+        where: {
+          doctorId: doctorProfile.id,
+          createdAt: {
+            gte: startOfYear,
+            lte: endOfYear
+          },
+          referenceId: {
+            not: null
+          }
+        },
+        select: {
+          referenceId: true
+        }
+      });
+
+      let maxSerial = 0;
+      for (const rx of prescriptionsInYear) {
+        if (rx.referenceId) {
+          const parts = rx.referenceId.split('/');
+          const serial = parseInt(parts[0], 10);
+          if (!isNaN(serial) && serial > maxSerial) {
+            maxSerial = serial;
+          }
+        }
+      }
+      finalReferenceId = `${maxSerial + 1}/${currentYear}`;
+    }
+
     const data = {
       doctorId: doctorProfile.id,
       patientName,
@@ -65,7 +100,7 @@ export async function createOfflinePrescription(req, res) {
       marginSize: marginSize !== undefined ? parseInt(marginSize, 10) : 40,
       rowSpacing: rowSpacing !== undefined ? parseInt(rowSpacing, 10) : 12,
       useLetterhead: useLetterhead !== undefined ? !!useLetterhead : false,
-      referenceId: referenceId || null,
+      referenceId: finalReferenceId,
       patientPhone: patientPhone || null,
       chiefComplaints: chiefComplaints || null,
       bp: bp || null,
@@ -186,6 +221,68 @@ export async function deleteOfflinePrescription(req, res) {
     return res.status(500).json({
       success: false,
       message: 'Failed to delete offline prescription.'
+    });
+  }
+}
+
+/**
+ * Get next reference ID for the authenticated doctor.
+ */
+export async function getNextReferenceId(req, res) {
+  try {
+    const doctorProfile = await prisma.doctorProfile.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!doctorProfile) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found.'
+      });
+    }
+
+    const currentYear = new Date().getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1);
+    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+    const prescriptionsInYear = await prisma.offlinePrescription.findMany({
+      where: {
+        doctorId: doctorProfile.id,
+        createdAt: {
+          gte: startOfYear,
+          lte: endOfYear
+        },
+        referenceId: {
+          not: null
+        }
+      },
+      select: {
+        referenceId: true
+      }
+    });
+
+    let maxSerial = 0;
+    for (const rx of prescriptionsInYear) {
+      if (rx.referenceId) {
+        const parts = rx.referenceId.split('/');
+        const serial = parseInt(parts[0], 10);
+        if (!isNaN(serial) && serial > maxSerial) {
+          maxSerial = serial;
+        }
+      }
+    }
+    const nextSerial = maxSerial + 1;
+    const nextReferenceId = `${nextSerial}/${currentYear}`;
+
+    return res.status(200).json({
+      success: true,
+      nextReferenceId
+    });
+  } catch (error) {
+    console.error('Error in getNextReferenceId:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate next reference number.'
     });
   }
 }
