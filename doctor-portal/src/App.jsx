@@ -42,6 +42,7 @@ export default function App() {
   const [selectedOfflineRxId, setSelectedOfflineRxId] = useState(null);
   
   const [rxSearchQuery, setRxSearchQuery] = useState('');
+  const [tempMed, setTempMed] = useState({ name: '', composition: '', dosage: '', frequency: '' });
   const [offlineForm, setOfflineForm] = useState({
     referenceId: '',
     patientName: '',
@@ -54,7 +55,7 @@ export default function App() {
     bp: '',
     pulse: '',
     weight: '',
-    medications: [{ name: '', composition: '', dosage: '', frequency: '' }],
+    medications: [],
     advice: '',
     requiredTests: '',
     followUpDate: ''
@@ -372,10 +373,20 @@ export default function App() {
     if (e) e.preventDefault();
     if (!token) return;
 
+    // Proactively add any currently typed tempMed to the list so the doctor doesn't lose it
+    let currentMeds = [...(offlineForm.medications || [])];
+    if (tempMed.name && tempMed.name.trim()) {
+      currentMeds.push({ ...tempMed });
+      // Update state for consistency
+      setOfflineForm(prev => ({ ...prev, medications: [...(prev.medications || []), { ...tempMed }] }));
+      setTempMed({ name: '', composition: '', dosage: '', frequency: '' });
+    }
+
     try {
       const body = {
         id: selectedOfflineRxId || undefined,
         ...offlineForm,
+        medications: currentMeds,
         ...offlineLayout
       };
 
@@ -447,7 +458,7 @@ export default function App() {
       bp: rx.bp || '',
       pulse: rx.pulse || '',
       weight: rx.weight || '',
-      medications: typeof rx.medications === 'string' ? JSON.parse(rx.medications) : rx.medications,
+      medications: (typeof rx.medications === 'string' ? JSON.parse(rx.medications) : rx.medications) || [],
       advice: rx.advice || '',
       requiredTests: rx.requiredTests || '',
       followUpDate: rx.followUpDate ? rx.followUpDate.split('T')[0] : ''
@@ -477,11 +488,12 @@ export default function App() {
       bp: '',
       pulse: '',
       weight: '',
-      medications: [{ name: '', composition: '', dosage: '', frequency: '' }],
+      medications: [],
       advice: '',
       requiredTests: '',
       followUpDate: ''
     });
+    setTempMed({ name: '', composition: '', dosage: '', frequency: '' });
     setOfflineLayout({
       pageWidth: 800,
       pageHeight: 1120,
