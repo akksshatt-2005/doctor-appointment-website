@@ -2399,38 +2399,54 @@ export default function App() {
                             <span style={{ fontSize: '0.85em', fontWeight: 800, color: '#1e293b', letterSpacing: '0.05em' }}>PRESCRIBED MEDICATIONS</span>
                           </div>
 
-                          {/* Medications Grid */}
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9em', marginBottom: '1.5rem' }}>
-                            <thead>
-                              <tr style={{ borderBottom: '2.5px solid #0f766e', color: '#000000', textAlign: 'left', backgroundColor: '#ffffff' }}>
-                                <th style={{ padding: `${offlineLayout.rowSpacing / 2}px 10px`, fontSize: '0.8em', fontWeight: 800 }}>MEDICINE NAME</th>
-                                <th style={{ padding: `${offlineLayout.rowSpacing / 2}px 10px`, fontSize: '0.8em', fontWeight: 800 }}>DOSAGE</th>
-                                <th style={{ padding: `${offlineLayout.rowSpacing / 2}px 10px`, fontSize: '0.8em', fontWeight: 800 }}>FREQUENCY & INSTRUCTIONS</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {offlineForm.medications.map((med, idx) => (
-                                <tr 
-                                  key={idx} 
-                                  style={{ 
-                                    backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#fff',
-                                    borderBottom: '1px solid #f1f5f9'
-                                  }}
-                                >
-                                  <td style={{ padding: `${offlineLayout.rowSpacing}px 10px`, color: '#000000' }}>
-                                    <div style={{ fontWeight: 800 }}>{med.name || '__________________'}</div>
-                                    {med.composition && med.composition.trim() && (
-                                      <div style={{ fontSize: '0.85em', color: '#b91c1c', fontWeight: 700, fontStyle: 'italic', marginTop: '0.15rem' }}>
-                                        ({med.composition.trim()})
-                                      </div>
-                                    )}
-                                  </td>
-                                  <td style={{ padding: `${offlineLayout.rowSpacing}px 10px`, color: '#000000', fontWeight: 700 }}>{med.dosage || ''}</td>
-                                  <td style={{ padding: `${offlineLayout.rowSpacing}px 10px`, color: '#000000', fontWeight: 700 }}>{med.frequency || '_______________'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                          {/* Stacked Medications List with Vertical Sidebars */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: `${offlineLayout.rowSpacing}px`, marginBottom: '1.5rem' }}>
+                            {offlineForm.medications.map((med, idx) => (
+                              <div 
+                                key={idx} 
+                                style={{ 
+                                  display: 'flex', 
+                                  border: '1px solid #cbd5e1', 
+                                  borderRadius: '6px', 
+                                  overflow: 'hidden', 
+                                  backgroundColor: '#f8fafc',
+                                  pageBreakInside: 'avoid'
+                                }}
+                              >
+                                {/* Big Section Bar (Colored Left Border) */}
+                                <div style={{ width: '6px', backgroundColor: '#0f766e' }}></div>
+                                <div style={{ flex: 1, padding: '0.6rem 0.8rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                  
+                                  {/* 1. Medicine Name */}
+                                  <div style={{ fontWeight: 800, color: '#000000', fontSize: '1.05em' }}>
+                                    {med.name || '__________________'}
+                                  </div>
+                                  
+                                  {/* 2. Composition */}
+                                  {med.composition && med.composition.trim() && (
+                                    <div style={{ fontSize: '0.85em', color: '#b91c1c', fontWeight: 700, fontStyle: 'italic' }}>
+                                      ({med.composition.trim()})
+                                    </div>
+                                  )}
+                                  
+                                  {/* 3. Dosage */}
+                                  {med.dosage && med.dosage.trim() && (
+                                    <div style={{ fontSize: '0.85em', color: '#334155', fontWeight: 700 }}>
+                                      <strong style={{ color: '#64748b', fontSize: '0.78em', marginRight: '0.5rem' }}>DOSAGE:</strong> 
+                                      {med.dosage}
+                                    </div>
+                                  )}
+
+                                  {/* 4. Frequency */}
+                                  <div style={{ fontSize: '0.85em', color: '#334155', fontWeight: 700 }}>
+                                    <strong style={{ color: '#64748b', fontSize: '0.78em', marginRight: '0.5rem' }}>FREQUENCY & INSTRUCTIONS:</strong> 
+                                    {med.frequency || '_______________'}
+                                  </div>
+                                  
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
 
                       </div>
