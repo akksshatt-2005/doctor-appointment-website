@@ -4,6 +4,23 @@ import { io } from 'socket.io-client';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const API_BASE_URL = `${API_URL}/api/v1`;
 
+const getLocalDateStr = (d = new Date()) => {
+  const yr = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${yr}-${mo}-${da}`;
+};
+
+const formatPrintDate = (dateStr) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
+  }
+  return dateStr;
+};
+
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('doc_token') || '');
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('doc_user')) || null);
@@ -29,7 +46,7 @@ export default function App() {
     patientAge: '',
     patientGender: 'Male',
     patientPhone: '',
-    consultDate: new Date().toISOString().split('T')[0],
+    consultDate: getLocalDateStr(),
     diagnosis: '',
     chiefComplaints: '',
     bp: '',
@@ -422,7 +439,7 @@ export default function App() {
       patientAge: rx.patientAge,
       patientGender: rx.patientGender,
       patientPhone: rx.patientPhone || '',
-      consultDate: rx.consultDate ? rx.consultDate.split('T')[0] : (rx.createdAt ? rx.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
+      consultDate: rx.consultDate ? rx.consultDate.split('T')[0] : (rx.createdAt ? rx.createdAt.split('T')[0] : getLocalDateStr()),
       diagnosis: rx.diagnosis,
       chiefComplaints: rx.chiefComplaints || '',
       bp: rx.bp || '',
@@ -452,7 +469,7 @@ export default function App() {
       patientAge: '',
       patientGender: 'Male',
       patientPhone: '',
-      consultDate: new Date().toISOString().split('T')[0],
+      consultDate: getLocalDateStr(),
       diagnosis: '',
       chiefComplaints: '',
       bp: '',
@@ -849,12 +866,7 @@ export default function App() {
     return `${yr}-${mo}-${da}`;
   };
 
-  const getLocalDateStr = (d) => {
-    const yr = d.getFullYear();
-    const mo = String(d.getMonth() + 1).padStart(2, '0');
-    const da = String(d.getDate()).padStart(2, '0');
-    return `${yr}-${mo}-${da}`;
-  };
+
 
   const todayStr = getLocalDateStr(new Date());
   const todayAppointments = appointments.filter(appt => getUtcDateStr(appt.appointmentDate) === todayStr);
@@ -2269,7 +2281,7 @@ export default function App() {
                         <div>
                           <div><strong style={{ color: '#64748b', fontSize: '0.72em' }}>DATE OF CONSULTATION</strong></div>
                           <div style={{ color: '#1e293b', fontSize: '1em', marginTop: '0.1rem' }}>
-                            {new Date(offlineForm.consultDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                            {formatPrintDate(offlineForm.consultDate)}
                           </div>
                         </div>
                         
