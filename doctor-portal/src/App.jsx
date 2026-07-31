@@ -35,6 +35,7 @@ export default function App() {
 
   // Dashboard view toggle and Offline prescription maker state
   const [dashboardView, setDashboardView] = useState('appointments'); // 'appointments' or 'offline-rx'
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [offlineRxList, setOfflineRxList] = useState([]);
   const [loadingOfflineRx, setLoadingOfflineRx] = useState(false);
   const [selectedOfflineRxId, setSelectedOfflineRxId] = useState(null);
@@ -1353,10 +1354,39 @@ export default function App() {
         )}
 
         {dashboardView === 'offline-rx' && (
-          <div className="offline-rx-workspace" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '2rem', alignItems: 'start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             
-            {/* Left Sidebar: Tabs for Prescriptions and Medicines */}
-            <div className="glass-panel no-print" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-md)' }}>
+            {/* Toggle Sidebar Button (Hamburger Menu) */}
+            <div className="no-print" style={{ display: 'flex', alignItems: 'center' }}>
+              <button 
+                type="button"
+                onClick={() => setSidebarOpen(prev => !prev)}
+                style={{
+                  background: sidebarOpen ? 'var(--neutral-light)' : 'var(--primary)',
+                  color: sidebarOpen ? 'var(--primary)' : 'var(--white)',
+                  border: '1px solid var(--primary)',
+                  borderRadius: '8px',
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: 'var(--shadow-sm)',
+                  transition: 'all 0.15s ease',
+                  outline: 'none'
+                }}
+              >
+                <span>☰</span> {sidebarOpen ? 'Hide Database & Saved Rx' : 'Show Database & Saved Rx'}
+              </button>
+            </div>
+
+            <div className="offline-rx-workspace" style={{ display: 'grid', gridTemplateColumns: sidebarOpen ? '280px 1fr' : '1fr', gap: '2rem', alignItems: 'start' }}>
+              
+              {/* Left Sidebar: Tabs for Prescriptions and Medicines */}
+              {sidebarOpen && (
+                <div className="glass-panel no-print" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-md)' }}>
               
               {/* Tab Header Selector */}
               <div style={{ display: 'flex', borderBottom: '1px solid var(--neutral-border)', paddingBottom: '0.5rem', marginBottom: '0.25rem' }}>
@@ -1649,6 +1679,7 @@ export default function App() {
                 </div>
               )}
             </div>
+          )}
 
             {/* Right Side: Form (Left Column) & Live preview (Right Column) */}
             <div className="workspace-split" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem', alignItems: 'start' }}>
@@ -2421,7 +2452,8 @@ export default function App() {
 
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       </main>
 
