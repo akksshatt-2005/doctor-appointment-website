@@ -1965,240 +1965,280 @@ export default function App() {
 
                 {/* Medications Rx List */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Prescribed Medications (Rx)</label>
-                    <button type="button" className="btn btn-secondary" onClick={addOfflineMedicationRow} style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
-                      + Add Medicine
-                    </button>
-                  </div>
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {offlineForm.medications.map((med, index) => (
-                      <div 
-                        key={index} 
-                        style={{ 
-                          border: '1px solid var(--neutral-border)', 
-                          borderRadius: '8px', 
-                          overflow: 'hidden', 
-                          backgroundColor: 'var(--white)',
-                          boxShadow: 'var(--shadow-sm)',
-                          display: 'flex',
-                          flexDirection: 'column'
+                  {/* Single Medicine Input Card */}
+                  <div 
+                    style={{ 
+                      border: '1px solid var(--neutral-border)', 
+                      borderRadius: '8px', 
+                      overflow: 'hidden', 
+                      backgroundColor: 'var(--white)',
+                      boxShadow: 'var(--shadow-sm)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      marginBottom: '1rem'
+                    }}
+                  >
+                    {/* Header Bar */}
+                    <div style={{ 
+                      backgroundColor: 'var(--primary-light)', 
+                      padding: '0.6rem 1rem', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      borderBottom: '1px solid var(--neutral-border)'
+                    }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--primary)' }}>
+                        💊 ADD MEDICINE TO RX
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={async () => {
+                          if (!tempMed.name.trim()) {
+                            alert('Please fill out the Medicine Name to save to database.');
+                            return;
+                          }
+                          try {
+                            const response = await fetch(`${API_BASE_URL}/doctor/medicines`, {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({
+                                name: tempMed.name.trim(),
+                                composition: tempMed.composition ? tempMed.composition.trim() : null,
+                                dosage: tempMed.dosage ? tempMed.dosage.trim() : null
+                              })
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                              setMedicinesList(prev => {
+                                const exists = prev.some(m => m.name.toLowerCase() === data.medicine.name.toLowerCase());
+                                if (exists) {
+                                  return prev.map(m => m.name.toLowerCase() === data.medicine.name.toLowerCase() ? data.medicine : m);
+                                }
+                                return [...prev, data.medicine].sort((a, b) => a.name.localeCompare(b.name));
+                              });
+                              alert(`"${tempMed.name}" saved to Medicine Database!`);
+                            } else {
+                              alert(data.message || 'Failed to save to database.');
+                            }
+                          } catch (err) {
+                            alert('Error saving to database.');
+                            console.error(err);
+                          }
                         }}
+                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                        title="Save this medicine to your database inventory"
                       >
-                        {/* Big Section Bar (Header Bar) */}
-                        <div style={{ 
-                          backgroundColor: 'var(--primary-light)', 
-                          padding: '0.6rem 1rem', 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          borderBottom: '1px solid var(--neutral-border)'
-                        }}>
-                          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--primary)' }}>
-                            💊 MEDICINE #{index + 1}
-                          </span>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            {/* Save to DB Button */}
+                        💾 Save to DB
+                      </button>
+                    </div>
+
+                    {/* Stacked Inputs */}
+                    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {/* Medicine Name */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', position: 'relative' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Medicine Name</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Tab. Paracetamol 650mg"
+                          value={tempMed.name}
+                          onChange={e => {
+                            setTempMed(prev => ({ ...prev, name: e.target.value }));
+                            setActiveSearchIndex(999);
+                          }}
+                          onFocus={() => setActiveSearchIndex(999)}
+                          onBlur={() => {
+                            setTimeout(() => {
+                              setActiveSearchIndex(null);
+                            }, 150);
+                          }}
+                          style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
+                        />
+                        
+                        {/* Autocomplete Dropdown list */}
+                        {activeSearchIndex === 999 && tempMed.name.trim() !== '' && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            backgroundColor: '#fff',
+                            border: '1px solid var(--neutral-border)',
+                            borderRadius: '6px',
+                            maxHeight: '180px',
+                            overflowY: 'auto',
+                            zIndex: 100,
+                            boxShadow: 'var(--shadow-lg)'
+                          }}>
+                            {(() => {
+                              const filtered = medicinesList.filter(m => 
+                                m.name.toLowerCase().includes(tempMed.name.toLowerCase()) ||
+                                (m.composition && m.composition.toLowerCase().includes(tempMed.name.toLowerCase()))
+                              );
+                              if (filtered.length === 0) {
+                                return (
+                                  <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--neutral-body)', fontStyle: 'italic' }}>
+                                    No matching medicines in DB.
+                                  </div>
+                                );
+                              }
+                              return filtered.map(m => (
+                                <div 
+                                  key={m.id}
+                                  onMouseDown={() => {
+                                    setTempMed({
+                                      name: m.name,
+                                      composition: m.composition || '',
+                                      dosage: m.dosage || '',
+                                      frequency: tempMed.frequency || ''
+                                    });
+                                    setActiveSearchIndex(null);
+                                  }}
+                                  style={{
+                                    padding: '0.5rem 0.75rem',
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer',
+                                    borderBottom: '1px solid #f1f5f9',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    backgroundColor: '#fff'
+                                  }}
+                                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
+                                >
+                                  <div>
+                                    <strong style={{ color: 'var(--neutral-dark)' }}>{m.name}</strong>
+                                    {m.composition && (
+                                      <span style={{ fontSize: '0.75rem', color: '#b91c1c', fontStyle: 'italic', marginLeft: '0.35rem' }}>
+                                        ({m.composition})
+                                      </span>
+                                    )}
+                                  </div>
+                                  {m.dosage && (
+                                    <span style={{ fontSize: '0.72rem', color: 'var(--neutral-body)' }}>{m.dosage}</span>
+                                  )}
+                                </div>
+                              ));
+                            })()}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Composition */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Composition (Generic Name)</label>
+                        <input 
+                          type="text" 
+                          placeholder="Composition (Optional)"
+                          value={tempMed.composition}
+                          onChange={e => setTempMed(prev => ({ ...prev, composition: e.target.value }))}
+                          style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
+                        />
+                      </div>
+
+                      {/* Dosage & Frequency side by side */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Dosage</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. 1 Tablet (Optional)"
+                            value={tempMed.dosage}
+                            onChange={e => setTempMed(prev => ({ ...prev, dosage: e.target.value }))}
+                            style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Frequency & Instructions</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. 1-0-1 (after meals)"
+                            value={tempMed.frequency}
+                            onChange={e => setTempMed(prev => ({ ...prev, frequency: e.target.value }))}
+                            style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Add to Prescription Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!tempMed.name.trim()) {
+                            alert('Please fill in the Medicine Name before adding.');
+                            return;
+                          }
+                          setOfflineForm(prev => ({
+                            ...prev,
+                            medications: [...prev.medications, { ...tempMed }]
+                          }));
+                          setTempMed({ name: '', composition: '', dosage: '', frequency: '' });
+                        }}
+                        className="btn btn-primary"
+                        style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', fontSize: '0.85rem', marginTop: '0.25rem' }}
+                      >
+                        ➕ Add to Prescription (Rx)
+                      </button>
+
+                    </div>
+                  </div>
+
+                  {/* Display List of Added Medicines under the entry box */}
+                  {offlineForm.medications.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Added Medicines ({offlineForm.medications.length})</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        {offlineForm.medications.map((med, index) => (
+                          <div 
+                            key={index}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '0.5rem 0.75rem',
+                              backgroundColor: 'var(--neutral-light)',
+                              border: '1px solid var(--neutral-border)',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem'
+                            }}
+                          >
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontWeight: 700, color: 'var(--neutral-dark)' }}>
+                                {index + 1}. {med.name}
+                              </span>
+                              {(med.composition || med.dosage || med.frequency) && (
+                                <span style={{ fontSize: '0.75rem', color: 'var(--neutral-body)', marginTop: '0.1rem' }}>
+                                  {med.composition ? `(${med.composition})` : ''} 
+                                  {med.dosage ? ` • ${med.dosage}` : ''} 
+                                  {med.frequency ? ` • ${med.frequency}` : ''}
+                                </span>
+                              )}
+                            </div>
                             <button
                               type="button"
-                              className="btn btn-secondary"
-                              onClick={async () => {
-                                if (!med.name.trim()) {
-                                  alert('Please fill out the Medicine Name to save to database.');
-                                  return;
-                                }
-                                try {
-                                  const response = await fetch(`${API_BASE_URL}/doctor/medicines`, {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                      'Authorization': `Bearer ${token}`
-                                    },
-                                    body: JSON.stringify({
-                                      name: med.name.trim(),
-                                      composition: med.composition ? med.composition.trim() : null,
-                                      dosage: med.dosage ? med.dosage.trim() : null
-                                    })
-                                  });
-                                  const data = await response.json();
-                                  if (data.success) {
-                                    setMedicinesList(prev => {
-                                      const exists = prev.some(m => m.name.toLowerCase() === data.medicine.name.toLowerCase());
-                                      if (exists) {
-                                        return prev.map(m => m.name.toLowerCase() === data.medicine.name.toLowerCase() ? data.medicine : m);
-                                      }
-                                      return [...prev, data.medicine].sort((a, b) => a.name.localeCompare(b.name));
-                                    });
-                                    alert(`"${med.name}" saved to Medicine Database!`);
-                                  } else {
-                                    alert(data.message || 'Failed to save to database.');
-                                  }
-                                } catch (err) {
-                                  alert('Error saving to database.');
-                                  console.error(err);
-                                }
+                              onClick={() => removeOfflineMedicationRow(index)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--danger)',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                padding: '0.2rem 0.4rem',
+                                fontSize: '0.9rem'
                               }}
-                              style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
-                              title="Save this medicine details to your database"
+                              title="Remove from Prescription"
                             >
-                              💾 Save to DB
+                              ✕
                             </button>
-                            
-                            {/* Remove Button */}
-                            {offlineForm.medications.length > 1 && (
-                              <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={() => removeOfflineMedicationRow(index)}
-                                style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                                title="Remove this medicine row"
-                              >
-                                🗑️ Remove
-                              </button>
-                            )}
                           </div>
-                        </div>
-
-                        {/* Stacked Inputs */}
-                        <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                          {/* Medicine Name with Autocomplete Suggestions */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', position: 'relative' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Medicine Name</label>
-                            <input 
-                              type="text" 
-                              placeholder="e.g. Tab. Paracetamol 650mg"
-                              value={med.name}
-                              onChange={e => {
-                                handleOfflineMedicationChange(index, 'name', e.target.value);
-                                setActiveSearchIndex(index);
-                              }}
-                              onFocus={() => setActiveSearchIndex(index)}
-                              onBlur={() => {
-                                // Small timeout to allow onMouseDown on dropdown items to fire first
-                                setTimeout(() => {
-                                  setActiveSearchIndex(null);
-                                }, 150);
-                              }}
-                              required
-                              style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
-                            />
-                            
-                            {/* Autocomplete Dropdown list */}
-                            {activeSearchIndex === index && med.name.trim() !== '' && (
-                              <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                right: 0,
-                                backgroundColor: '#fff',
-                                border: '1px solid var(--neutral-border)',
-                                borderRadius: '6px',
-                                maxHeight: '180px',
-                                overflowY: 'auto',
-                                zIndex: 100,
-                                boxShadow: 'var(--shadow-lg)'
-                              }}>
-                                {(() => {
-                                  const filtered = medicinesList.filter(m => 
-                                    m.name.toLowerCase().includes(med.name.toLowerCase()) ||
-                                    (m.composition && m.composition.toLowerCase().includes(med.name.toLowerCase()))
-                                  );
-                                  if (filtered.length === 0) {
-                                    return (
-                                      <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--neutral-body)', fontStyle: 'italic' }}>
-                                        No matching medicines in DB.
-                                      </div>
-                                    );
-                                  }
-                                  return filtered.map(m => (
-                                    <div 
-                                      key={m.id}
-                                      onMouseDown={() => {
-                                        // Use onMouseDown so it fires BEFORE the input onBlur event closes the list
-                                        setOfflineForm(prev => {
-                                          const updated = [...prev.medications];
-                                          updated[index] = {
-                                            name: m.name,
-                                            composition: m.composition || '',
-                                            dosage: m.dosage || '',
-                                            frequency: updated[index].frequency || ''
-                                          };
-                                          return { ...prev, medications: updated };
-                                        });
-                                        setActiveSearchIndex(null);
-                                      }}
-                                      style={{
-                                        padding: '0.5rem 0.75rem',
-                                        fontSize: '0.8rem',
-                                        cursor: 'pointer',
-                                        borderBottom: '1px solid #f1f5f9',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        backgroundColor: '#fff'
-                                      }}
-                                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
-                                    >
-                                      <div>
-                                        <strong style={{ color: 'var(--neutral-dark)' }}>{m.name}</strong>
-                                        {m.composition && (
-                                          <span style={{ fontSize: '0.75rem', color: '#b91c1c', fontStyle: 'italic', marginLeft: '0.35rem' }}>
-                                            ({m.composition})
-                                          </span>
-                                        )}
-                                      </div>
-                                      {m.dosage && (
-                                        <span style={{ fontSize: '0.72rem', color: 'var(--neutral-body)' }}>{m.dosage}</span>
-                                      )}
-                                    </div>
-                                  ));
-                                })()}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Composition */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Composition (Generic Name)</label>
-                            <input 
-                              type="text" 
-                              placeholder="Composition (Optional)"
-                              value={med.composition || ''}
-                              onChange={e => handleOfflineMedicationChange(index, 'composition', e.target.value)}
-                              style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
-                            />
-                          </div>
-
-                          {/* Grid for Dosage & Frequency side by side inside the card */}
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Dosage</label>
-                              <input 
-                                type="text" 
-                                placeholder="e.g. 1 Tablet (Optional)"
-                                value={med.dosage}
-                                onChange={e => handleOfflineMedicationChange(index, 'dosage', e.target.value)}
-                                style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Frequency & Instructions</label>
-                              <input 
-                                type="text" 
-                                placeholder="e.g. 1-0-1 (after meals)"
-                                value={med.frequency}
-                                onChange={e => handleOfflineMedicationChange(index, 'frequency', e.target.value)}
-                                required
-                                style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.85rem' }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Required Lab Tests */}
