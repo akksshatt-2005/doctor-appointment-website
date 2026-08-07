@@ -67,7 +67,7 @@ export default function App() {
     fontSize: 13,   // px
     marginSize: 40,   // px
     rowSpacing: 12,    // px
-    useLetterhead: false
+    useLetterhead: localStorage.getItem('useLetterheadOffline') === 'true'
   });
 
   // Medicine Inventory State
@@ -92,7 +92,7 @@ export default function App() {
     diagnosis: '',
     advice: '',
     medications: [{ name: '', composition: '', dosage: '', frequency: '' }],
-    useLetterhead: false
+    useLetterhead: localStorage.getItem('useLetterheadOnline') === 'true'
   });
   const [prescriptionSubmitting, setPrescriptionSubmitting] = useState(false);
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState('');
@@ -499,7 +499,7 @@ export default function App() {
       fontSize: 13,
       marginSize: 40,
       rowSpacing: 12,
-      useLetterhead: false
+      useLetterhead: localStorage.getItem('useLetterheadOffline') === 'true'
     });
   };
 
@@ -1148,7 +1148,11 @@ export default function App() {
                           type="checkbox"
                           id="use-letterhead-online"
                           checked={prescriptionForm.useLetterhead}
-                          onChange={e => setPrescriptionForm(prev => ({ ...prev, useLetterhead: e.target.checked }))}
+                          onChange={e => {
+                            const val = e.target.checked;
+                            localStorage.setItem('useLetterheadOnline', val ? 'true' : 'false');
+                            setPrescriptionForm(prev => ({ ...prev, useLetterhead: val }));
+                          }}
                           style={{ cursor: 'pointer', width: 'auto' }}
                         />
                         <label htmlFor="use-letterhead-online" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e2e8f0', cursor: 'pointer', userSelect: 'none' }}>
@@ -1312,7 +1316,8 @@ export default function App() {
                           setPrescriptionForm({
                             diagnosis: appt.prescription?.diagnosis || '',
                             advice: appt.prescription?.advice || '',
-                            medications: appt.prescription?.medications ? JSON.parse(appt.prescription.medications) : [{ name: '', dosage: '', frequency: '' }]
+                            medications: appt.prescription?.medications ? JSON.parse(appt.prescription.medications) : [{ name: '', dosage: '', frequency: '' }],
+                            useLetterhead: localStorage.getItem('useLetterheadOnline') === 'true'
                           });
                           setActiveVideoAppt(appt);
                           startMedia();
@@ -1323,7 +1328,8 @@ export default function App() {
                           setPrescriptionForm({
                             diagnosis: appt.prescription?.diagnosis || '',
                             advice: appt.prescription?.advice || '',
-                            medications: appt.prescription?.medications ? JSON.parse(appt.prescription.medications) : [{ name: '', dosage: '', frequency: '' }]
+                            medications: appt.prescription?.medications ? JSON.parse(appt.prescription.medications) : [{ name: '', dosage: '', frequency: '' }],
+                            useLetterhead: localStorage.getItem('useLetterheadOnline') === 'true'
                           });
                         }}
                       />
@@ -1351,7 +1357,8 @@ export default function App() {
                           setPrescriptionForm({
                             diagnosis: appt.prescription?.diagnosis || '',
                             advice: appt.prescription?.advice || '',
-                            medications: appt.prescription?.medications ? JSON.parse(appt.prescription.medications) : [{ name: '', dosage: '', frequency: '' }]
+                            medications: appt.prescription?.medications ? JSON.parse(appt.prescription.medications) : [{ name: '', dosage: '', frequency: '' }],
+                            useLetterhead: localStorage.getItem('useLetterheadOnline') === 'true'
                           });
                         }}
                       />
@@ -2286,7 +2293,11 @@ export default function App() {
                         type="checkbox" 
                         id="use-letterhead-offline" 
                         checked={offlineLayout.useLetterhead} 
-                        onChange={e => setOfflineLayout(prev => ({ ...prev, useLetterhead: e.target.checked }))}
+                        onChange={e => {
+                          const val = e.target.checked;
+                          localStorage.setItem('useLetterheadOffline', val ? 'true' : 'false');
+                          setOfflineLayout(prev => ({ ...prev, useLetterhead: val }));
+                        }}
                         style={{ cursor: 'pointer', width: 'auto' }}
                       />
                       <label htmlFor="use-letterhead-offline" style={{ fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', userSelect: 'none' }}>
