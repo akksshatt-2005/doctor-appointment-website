@@ -1454,7 +1454,7 @@ export default function App() {
 
                   <input 
                     type="text"
-                    placeholder="🔍 Search by Ref ID, Name..."
+                    placeholder="🔍 Search by Name, Ref ID, Mobile..."
                     value={rxSearchQuery}
                     onChange={e => setRxSearchQuery(e.target.value)}
                     style={{
@@ -1479,6 +1479,7 @@ export default function App() {
                         return (
                           rx.patientName.toLowerCase().includes(q) ||
                           (rx.referenceId && rx.referenceId.toLowerCase().includes(q)) ||
+                          (rx.patientPhone && rx.patientPhone.toLowerCase().includes(q)) ||
                           rx.id.toLowerCase().includes(q)
                         );
                       }).map(rx => (
