@@ -40,6 +40,7 @@ export default function App() {
   const [offlineRxList, setOfflineRxList] = useState([]);
   const [loadingOfflineRx, setLoadingOfflineRx] = useState(false);
   const [selectedOfflineRxId, setSelectedOfflineRxId] = useState(null);
+  const [originalConsultDate, setOriginalConsultDate] = useState('');
   
   const [rxSearchQuery, setRxSearchQuery] = useState('');
   const [tempMed, setTempMed] = useState({ name: '', composition: '', dosage: '', frequency: '' });
@@ -382,8 +383,9 @@ export default function App() {
     }
 
     try {
+      const isNewVisit = selectedOfflineRxId && (offlineForm.consultDate !== originalConsultDate);
       const body = {
-        id: selectedOfflineRxId || undefined,
+        id: isNewVisit ? undefined : (selectedOfflineRxId || undefined),
         ...offlineForm,
         medications: currentMeds,
         ...offlineLayout
@@ -400,8 +402,9 @@ export default function App() {
       const data = await response.json();
 
       if (data.success) {
-        alert(selectedOfflineRxId ? 'Offline prescription updated successfully!' : 'Offline prescription created successfully!');
+        alert(isNewVisit ? 'New follow-up prescription created successfully!' : (selectedOfflineRxId ? 'Offline prescription updated successfully!' : 'Offline prescription created successfully!'));
         setSelectedOfflineRxId(data.prescription.id);
+        setOriginalConsultDate(data.prescription.consultDate ? data.prescription.consultDate.split('T')[0] : '');
         setOfflineForm(prev => ({ ...prev, referenceId: data.prescription.referenceId || '' }));
         fetchOfflinePrescriptions();
         return true;
@@ -448,13 +451,15 @@ export default function App() {
   // Load offline prescription into form and layout
   const loadOfflinePrescription = (rx) => {
     setSelectedOfflineRxId(rx.id);
+    const cDate = rx.consultDate ? rx.consultDate.split('T')[0] : (rx.createdAt ? rx.createdAt.split('T')[0] : getLocalDateStr());
+    setOriginalConsultDate(cDate);
     setOfflineForm({
       referenceId: rx.referenceId || '',
       patientName: rx.patientName,
       patientAge: rx.patientAge,
       patientGender: rx.patientGender,
       patientPhone: rx.patientPhone || '',
-      consultDate: rx.consultDate ? rx.consultDate.split('T')[0] : (rx.createdAt ? rx.createdAt.split('T')[0] : getLocalDateStr()),
+      consultDate: cDate,
       diagnosis: rx.diagnosis,
       chiefComplaints: rx.chiefComplaints || '',
       bp: rx.bp || '',
@@ -478,6 +483,7 @@ export default function App() {
   // Reset/Create fresh offline prescription template
   const resetOfflineForm = () => {
     setSelectedOfflineRxId(null);
+    setOriginalConsultDate('');
     setOfflineForm({
       referenceId: '',
       patientName: '',
@@ -1724,7 +1730,15 @@ export default function App() {
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Consultation Date</label>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Consultation Date</span>
+                      <span 
+                        onClick={() => setOfflineForm(prev => ({ ...prev, consultDate: getLocalDateStr() }))}
+                        style={{ color: 'var(--primary)', cursor: 'pointer', fontSize: '0.75rem', textDecoration: 'underline' }}
+                      >
+                        Set to Today
+                      </span>
+                    </label>
                     <input 
                       type="date" 
                       value={offlineForm.consultDate}
