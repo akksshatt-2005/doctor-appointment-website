@@ -57,14 +57,17 @@ async function setupSlots() {
     for (let i = 0; i < 14; i++) {
       const slotDate = new Date();
       slotDate.setDate(today.getDate() + i);
-      slotDate.setHours(0, 0, 0, 0);
+      const year = slotDate.getFullYear();
+      const month = slotDate.getMonth();
+      const dayVal = slotDate.getDate();
+      const utcSlotDate = new Date(Date.UTC(year, month, dayVal, 0, 0, 0, 0));
 
       for (const ts of timeSlots) {
         await prisma.availabilitySlot.upsert({
           where: {
             unique_doctor_slot: {
               doctorId: doctor.id,
-              date: slotDate,
+              date: utcSlotDate,
               startTime: ts.start
             }
           },
@@ -74,7 +77,7 @@ async function setupSlots() {
           },
           create: {
             doctorId: doctor.id,
-            date: slotDate,
+            date: utcSlotDate,
             startTime: ts.start,
             endTime: ts.end,
             consultType: 'ONLINE',

@@ -370,7 +370,7 @@ export default function App() {
   // Save/Submit offline prescription
   const saveOfflinePrescription = async (e) => {
     if (e) e.preventDefault();
-    if (!token) return;
+    if (!token) return false;
 
     // Proactively add any currently typed tempMed to the list so the doctor doesn't lose it
     let currentMeds = [...(offlineForm.medications || [])];
@@ -404,12 +404,15 @@ export default function App() {
         setSelectedOfflineRxId(data.prescription.id);
         setOfflineForm(prev => ({ ...prev, referenceId: data.prescription.referenceId || '' }));
         fetchOfflinePrescriptions();
+        return true;
       } else {
         alert(data.message || 'Failed to save offline prescription.');
+        return false;
       }
     } catch (err) {
       alert('Error saving offline prescription.');
       console.error(err);
+      return false;
     }
   };
 
@@ -2203,7 +2206,14 @@ export default function App() {
                 <button 
                   type="button" 
                   className="btn btn-primary" 
-                  onClick={() => window.print()}
+                  onClick={async () => {
+                    const success = await saveOfflinePrescription();
+                    if (success) {
+                      setTimeout(() => {
+                        window.print();
+                      }, 100);
+                    }
+                  }}
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1.25rem', fontSize: '0.875rem', fontWeight: 600 }}
                 >
                   🖨️ Print Prescription

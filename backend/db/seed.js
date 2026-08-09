@@ -94,14 +94,16 @@ async function main() {
   for (let i = 0; i < 7; i++) {
     const slotDate = new Date();
     slotDate.setDate(today.getDate() + i);
-    // Set hours to midnight to standardize date comparison
-    slotDate.setHours(0, 0, 0, 0);
+    const year = slotDate.getFullYear();
+    const month = slotDate.getMonth();
+    const dayVal = slotDate.getDate();
+    const utcSlotDate = new Date(Date.UTC(year, month, dayVal, 0, 0, 0, 0));
 
     for (const ts of timeSlots) {
       await prisma.availabilitySlot.create({
         data: {
           doctorId: doctorProfileId,
-          date: slotDate,
+          date: utcSlotDate,
           startTime: ts.start,
           endTime: ts.end,
           isBooked: false
@@ -154,13 +156,16 @@ async function main() {
   for (const rev of reviews) {
     const apptDate = new Date();
     apptDate.setDate(today.getDate() + rev.dateOffset);
-    apptDate.setHours(0, 0, 0, 0);
+    const year = apptDate.getFullYear();
+    const month = apptDate.getMonth();
+    const dayVal = apptDate.getDate();
+    const utcApptDate = new Date(Date.UTC(year, month, dayVal, 0, 0, 0, 0));
 
     // Create a booked availability slot for this past appointment
     const pastSlot = await prisma.availabilitySlot.create({
       data: {
         doctorId: doctorProfileId,
-        date: apptDate,
+        date: utcApptDate,
         startTime: rev.slotTime === '05:30 PM' ? '17:30' : rev.slotTime === '06:00 PM' ? '18:00' : rev.slotTime === '07:00 PM' ? '19:00' : '20:00',
         endTime: rev.slotTime === '05:30 PM' ? '18:00' : rev.slotTime === '06:00 PM' ? '18:30' : rev.slotTime === '07:00 PM' ? '19:30' : '20:30',
         isBooked: true

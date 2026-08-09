@@ -7,19 +7,19 @@ function generate30MinIntervals(startTimeStr, endTimeStr) {
   const intervals = [];
   const [startHour, startMin] = startTimeStr.split(':').map(Number);
   const [endHour, endMin] = endTimeStr.split(':').map(Number);
-  
+
   let current = new Date();
   current.setHours(startHour, startMin, 0, 0);
-  
+
   const end = new Date();
   end.setHours(endHour, endMin, 0, 0);
-  
+
   const pad = (num) => String(num).padStart(2, '0');
 
   while (current < end) {
     const next = new Date(current.getTime() + 30 * 60 * 1000); // add 30 minutes
     if (next > end) break;
-    
+
     intervals.push({
       start: `${pad(current.getHours())}:${pad(current.getMinutes())}`,
       end: `${pad(next.getHours())}:${pad(next.getMinutes())}`

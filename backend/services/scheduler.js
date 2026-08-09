@@ -19,10 +19,13 @@ export function startReminderScheduler() {
   // Runs every minute
   cron.schedule('* * * * *', async () => {
     console.log('[Scheduler] Checking for upcoming consultations to send 1-hour reminders...');
-    
+
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const dayVal = now.getDate();
+      const today = new Date(Date.UTC(year, month, dayVal, 0, 0, 0, 0));
 
       // Fetch all scheduled appointments for today
       const appointments = await prisma.appointment.findMany({
@@ -37,16 +40,15 @@ export function startReminderScheduler() {
         }
       });
 
-      const now = new Date();
       const currentMinutesFromMidnight = now.getHours() * 60 + now.getMinutes();
       const targetTimeInMinutes = currentMinutesFromMidnight + 60; // 1 hour from now
 
       for (const appt of appointments) {
         const slotMinutes = parseSlotTimeToMinutes(appt.slotTime);
-        
+
         // Match appointments that fall within +/- 5 minutes of 1 hour from now
         const isTimeMatch = Math.abs(slotMinutes - targetTimeInMinutes) <= 5;
-        
+
         if (isTimeMatch) {
           // Verify we haven't already sent a reminder to this user for this booking ID
           const alreadySent = await prisma.notification.findFirst({
@@ -138,6 +140,6 @@ export function startReminderScheduler() {
       console.error('[Scheduler Error] Failed to process reminders:', error);
     }
   });
-  
+
   console.log('[Scheduler] 1-hour appointment reminder cron initialized.');
 }
