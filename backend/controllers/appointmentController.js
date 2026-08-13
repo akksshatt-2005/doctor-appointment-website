@@ -615,11 +615,19 @@ export async function createPrescription(req, res, next) {
       doc.fillColor('#0f766e').font('Helvetica-Oblique').fontSize(9.5).text(advice, 65, currentY + 8, { width: 465, lineGap: 2 });
     }
 
-    // 6. Signature block (Anchored at the bottom)
-    const sigY = useLetterhead ? 640 : 710;
-    doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(350, sigY).lineTo(545, sigY).stroke();
-    doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(10).text('Dr. Priyadarshi Srivastava', 350, sigY + 6, { align: 'right', width: 195 });
-    doc.fillColor('#64748b').font('Helvetica').fontSize(8.5).text('Consultant Neuropsychiatrist\nNeuro Harmony Clinic', 350, sigY + 19, { align: 'right', width: 195 });
+    // 6. Signature block (Anchored at the bottom left)
+    const sigY = useLetterhead ? 590 : 650;
+    const signaturePath = path.resolve('assets/signature.png');
+    
+    if (fs.existsSync(signaturePath)) {
+      // Draw signature image (entire logo as shown in attached photo)
+      doc.image(signaturePath, 50, sigY, { width: 155 });
+    } else {
+      // Fallback text-based signature if file is missing
+      doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(50, sigY).lineTo(245, sigY).stroke();
+      doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(10).text('Dr. Priyadarshi Srivastava', 50, sigY + 6, { width: 195 });
+      doc.fillColor('#64748b').font('Helvetica').fontSize(8.5).text('Consultant Neuropsychiatrist\nNeuro Harmony Clinic', 50, sigY + 19, { width: 195 });
+    }
 
     // Digital Authentication Note
     if (!useLetterhead) {
