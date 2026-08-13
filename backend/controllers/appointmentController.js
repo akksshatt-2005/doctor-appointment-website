@@ -444,7 +444,7 @@ export async function updateAppointmentStatusByPatient(req, res, next) {
 
 export async function createPrescription(req, res, next) {
   const { id } = req.params;
-  const { diagnosis, medications, advice, useLetterhead } = req.body;
+  const { diagnosis, medications, advice, useLetterhead, showSignature, signatureSize, signaturePosition } = req.body;
 
   if (!diagnosis || !medications || !Array.isArray(medications)) {
     return res.status(400).json({
@@ -617,27 +617,34 @@ export async function createPrescription(req, res, next) {
       currentY += adviceCardHeight;
     }
 
-    // 6. Signature block (Dynamic positioning below general advice / notes)
-    const sigWidth = 195;
-    const sigHeight = sigWidth / 1.5; // ~130pt aspect ratio 1.5:1
-    let sigY = currentY + 15;
-    
-    // Safety check: Ensure signature fits on the page (leaves room for digital validation note if not useLetterhead)
-    const maxAllowedY = useLetterhead ? (842 - 126 - sigHeight) : (765 - sigHeight);
-    if (sigY > maxAllowedY) {
-      sigY = maxAllowedY;
-    }
+    // 6. Signature block (Dynamic positioning / custom layout settings)
+    const showSig = showSignature !== undefined ? (showSignature === true || showSignature === 'true') : true;
+    if (showSig) {
+      const sigWidth = signatureSize ? (parseInt(signatureSize) / 1.33) : 165; // convert px to pt (A4 points)
+      const sigHeight = sigWidth / 1.5; // aspect ratio 1.5:1
+      const sigPos = signaturePosition || 'inline';
 
-    const signaturePath = path.resolve('assets/signature.png');
-    
-    if (fs.existsSync(signaturePath)) {
-      // Draw signature image (entire logo as shown in attached photo)
-      doc.image(signaturePath, 50, sigY, { width: sigWidth });
-    } else {
-      // Fallback text-based signature if file is missing
-      doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(50, sigY).lineTo(245, sigY).stroke();
-      doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(10).text('Dr. Priyadarshi Srivastava', 50, sigY + 6, { width: 195 });
-      doc.fillColor('#64748b').font('Helvetica').fontSize(8.5).text('Consultant Neuropsychiatrist\nNeuro Harmony Clinic', 50, sigY + 19, { width: 195 });
+      let sigY;
+      if (sigPos === 'bottom') {
+        sigY = useLetterhead ? (842 - 126 - sigHeight - 10) : (765 - sigHeight - 10);
+      } else {
+        sigY = currentY + 15;
+        const maxAllowedY = useLetterhead ? (842 - 126 - sigHeight) : (765 - sigHeight);
+        if (sigY > maxAllowedY) {
+          sigY = maxAllowedY;
+        }
+      }
+
+      const signaturePath = path.resolve('assets/signature.png');
+      if (fs.existsSync(signaturePath)) {
+        // Draw signature image (entire logo as shown in attached photo)
+        doc.image(signaturePath, 50, sigY, { width: sigWidth });
+      } else {
+        // Fallback text-based signature if file is missing
+        doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(50, sigY).lineTo(245, sigY).stroke();
+        doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(10).text('Dr. Priyadarshi Srivastava', 50, sigY + 6, { width: 195 });
+        doc.fillColor('#64748b').font('Helvetica').fontSize(8.5).text('Consultant Neuropsychiatrist\nNeuro Harmony Clinic', 50, sigY + 19, { width: 195 });
+      }
     }
 
     // Digital Authentication Note

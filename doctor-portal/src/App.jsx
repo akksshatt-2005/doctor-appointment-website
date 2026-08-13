@@ -68,7 +68,10 @@ export default function App() {
     fontSize: 13,   // px
     marginSize: 40,   // px
     rowSpacing: 12,    // px
-    useLetterhead: localStorage.getItem('useLetterheadOffline') === 'true'
+    useLetterhead: localStorage.getItem('useLetterheadOffline') === 'true',
+    showSignature: localStorage.getItem('showSignatureOffline') !== 'false',
+    signatureSize: parseInt(localStorage.getItem('signatureSizeOffline')) || 220,
+    signaturePosition: localStorage.getItem('signaturePositionOffline') || 'inline'
   });
 
   // Medicine Inventory State
@@ -818,7 +821,10 @@ export default function App() {
           diagnosis: prescriptionForm.diagnosis,
           advice: prescriptionForm.advice,
           medications: prescriptionForm.medications,
-          useLetterhead: prescriptionForm.useLetterhead
+          useLetterhead: prescriptionForm.useLetterhead,
+          showSignature: offlineLayout.showSignature,
+          signatureSize: offlineLayout.signatureSize,
+          signaturePosition: offlineLayout.signaturePosition
         })
       });
 
@@ -2330,6 +2336,66 @@ export default function App() {
                       </label>
                     </div>
 
+                    {/* Signature Settings Divider */}
+                    <div style={{ gridColumn: 'span 2', height: '1px', backgroundColor: 'var(--neutral-border)', margin: '0.5rem 0' }}></div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', gridColumn: 'span 2' }}>
+                      <input 
+                        type="checkbox" 
+                        id="show-signature-offline" 
+                        checked={offlineLayout.showSignature} 
+                        onChange={e => {
+                          const val = e.target.checked;
+                          localStorage.setItem('showSignatureOffline', val ? 'true' : 'false');
+                          setOfflineLayout(prev => ({ ...prev, showSignature: val }));
+                        }}
+                        style={{ cursor: 'pointer', width: 'auto' }}
+                      />
+                      <label htmlFor="show-signature-offline" style={{ fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', userSelect: 'none' }}>
+                        Apply Signature Logo
+                      </label>
+                    </div>
+
+                    {offlineLayout.showSignature && (
+                      <>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Signature Size</span>
+                            <span>{offlineLayout.signatureSize}px</span>
+                          </label>
+                          <input 
+                            type="range" 
+                            min="120" 
+                            max="350" 
+                            value={offlineLayout.signatureSize} 
+                            onChange={e => {
+                              const val = parseInt(e.target.value);
+                              localStorage.setItem('signatureSizeOffline', val.toString());
+                              setOfflineLayout(prev => ({ ...prev, signatureSize: val }));
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Signature Position</span>
+                          </label>
+                          <select
+                            value={offlineLayout.signaturePosition}
+                            onChange={e => {
+                              const val = e.target.value;
+                              localStorage.setItem('signaturePositionOffline', val);
+                              setOfflineLayout(prev => ({ ...prev, signaturePosition: val }));
+                            }}
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid var(--neutral-border)', backgroundColor: 'var(--white)', color: 'var(--neutral-dark)', cursor: 'pointer' }}
+                          >
+                            <option value="inline">Inline (Below Advice/Notes)</option>
+                            <option value="bottom">Fixed Bottom Left</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+
                   </div>
                 </div>
               )}
@@ -2473,18 +2539,20 @@ export default function App() {
                           )}
 
                           {/* Signature block printed dynamically just below general advice / notes */}
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '1rem' }}>
-                            <img 
-                              src="/signature.png" 
-                              alt="Dr. Priyadarshi Srivastava Signature" 
-                              style={{ 
-                                width: '220px', 
-                                height: 'auto', 
-                                mixBlendMode: 'multiply',
-                                display: 'block'
-                              }} 
-                            />
-                          </div>
+                          {offlineLayout.showSignature && offlineLayout.signaturePosition === 'inline' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '1.25rem' }}>
+                              <img 
+                                src="/signature.png" 
+                                alt="Dr. Priyadarshi Srivastava Signature" 
+                                style={{ 
+                                  width: `${offlineLayout.signatureSize}px`, 
+                                  height: 'auto', 
+                                  mixBlendMode: 'multiply',
+                                  display: 'block'
+                                }} 
+                              />
+                            </div>
+                          )}
                         </div>
 
                         {/* Right Column: Prescribed Medications (Rx) */}
@@ -2533,9 +2601,23 @@ export default function App() {
                     </div>
 
                     {/* Signature block bottom aligned */}
-                    <div>
+                    <div style={{ marginTop: '1.5rem', width: '100%' }}>
+                      {offlineLayout.showSignature && offlineLayout.signaturePosition === 'bottom' && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1rem' }}>
+                          <img 
+                            src="/signature.png" 
+                            alt="Dr. Priyadarshi Srivastava Signature" 
+                            style={{ 
+                              width: `${offlineLayout.signatureSize}px`, 
+                              height: 'auto', 
+                              mixBlendMode: 'multiply',
+                              display: 'block'
+                            }} 
+                          />
+                        </div>
+                      )}
                       {!offlineLayout.useLetterhead && (
-                        <div style={{ textAlign: 'center', fontSize: '0.65em', color: '#94a3b8', marginTop: '1.5rem', width: '100%', lineHeight: 1.3 }}>
+                        <div style={{ textAlign: 'center', fontSize: '0.65em', color: '#94a3b8', width: '100%', lineHeight: 1.3 }}>
                           This is a digitally generated secure e-Prescription. Valid without physical signature.
                         </div>
                       )}
