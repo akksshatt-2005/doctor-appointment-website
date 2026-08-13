@@ -444,7 +444,7 @@ export async function updateAppointmentStatusByPatient(req, res, next) {
 
 export async function createPrescription(req, res, next) {
   const { id } = req.params;
-  const { diagnosis, medications, advice, useLetterhead, showSignature, signatureSize, signaturePosition } = req.body;
+  const { diagnosis, medications, advice, useLetterhead, showSignature, signatureSize, signaturePosition, signatureXOffset, signatureYOffset } = req.body;
 
   if (!diagnosis || !medications || !Array.isArray(medications)) {
     return res.status(400).json({
@@ -635,15 +635,21 @@ export async function createPrescription(req, res, next) {
         }
       }
 
+      // Apply translation offsets
+      const offsetX = signatureXOffset ? (parseInt(signatureXOffset) / 1.33) : 0;
+      const offsetY = signatureYOffset ? (parseInt(signatureYOffset) / 1.33) : 0;
+      const finalX = 50 + offsetX;
+      const finalY = sigY + offsetY;
+
       const signaturePath = path.resolve('assets/signature.png');
       if (fs.existsSync(signaturePath)) {
         // Draw signature image (entire logo as shown in attached photo)
-        doc.image(signaturePath, 50, sigY, { width: sigWidth });
+        doc.image(signaturePath, finalX, finalY, { width: sigWidth });
       } else {
         // Fallback text-based signature if file is missing
-        doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(50, sigY).lineTo(245, sigY).stroke();
-        doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(10).text('Dr. Priyadarshi Srivastava', 50, sigY + 6, { width: 195 });
-        doc.fillColor('#64748b').font('Helvetica').fontSize(8.5).text('Consultant Neuropsychiatrist\nNeuro Harmony Clinic', 50, sigY + 19, { width: 195 });
+        doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(finalX, finalY).lineTo(finalX + 195, finalY).stroke();
+        doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(10).text('Dr. Priyadarshi Srivastava', finalX, finalY + 6, { width: 195 });
+        doc.fillColor('#64748b').font('Helvetica').fontSize(8.5).text('Consultant Neuropsychiatrist\nNeuro Harmony Clinic', finalX, finalY + 19, { width: 195 });
       }
     }
 

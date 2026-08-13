@@ -71,7 +71,9 @@ export default function App() {
     useLetterhead: localStorage.getItem('useLetterheadOffline') === 'true',
     showSignature: localStorage.getItem('showSignatureOffline') !== 'false',
     signatureSize: parseInt(localStorage.getItem('signatureSizeOffline')) || 220,
-    signaturePosition: localStorage.getItem('signaturePositionOffline') || 'inline'
+    signaturePosition: localStorage.getItem('signaturePositionOffline') || 'inline',
+    signatureXOffset: parseInt(localStorage.getItem('signatureXOffsetOffline')) || 0,
+    signatureYOffset: parseInt(localStorage.getItem('signatureYOffsetOffline')) || 0
   });
 
   // Medicine Inventory State
@@ -824,7 +826,9 @@ export default function App() {
           useLetterhead: prescriptionForm.useLetterhead,
           showSignature: offlineLayout.showSignature,
           signatureSize: offlineLayout.signatureSize,
-          signaturePosition: offlineLayout.signaturePosition
+          signaturePosition: offlineLayout.signaturePosition,
+          signatureXOffset: offlineLayout.signatureXOffset,
+          signatureYOffset: offlineLayout.signatureYOffset
         })
       });
 
@@ -2393,6 +2397,42 @@ export default function App() {
                             <option value="bottom">Fixed Bottom Left</option>
                           </select>
                         </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Signature Shift (Left / Right)</span>
+                            <span>{offlineLayout.signatureXOffset}px</span>
+                          </label>
+                          <input 
+                            type="range" 
+                            min="-100" 
+                            max="400" 
+                            value={offlineLayout.signatureXOffset} 
+                            onChange={e => {
+                              const val = parseInt(e.target.value);
+                              localStorage.setItem('signatureXOffsetOffline', val.toString());
+                              setOfflineLayout(prev => ({ ...prev, signatureXOffset: val }));
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Signature Shift (Up / Down)</span>
+                            <span>{offlineLayout.signatureYOffset}px</span>
+                          </label>
+                          <input 
+                            type="range" 
+                            min="-150" 
+                            max="150" 
+                            value={offlineLayout.signatureYOffset} 
+                            onChange={e => {
+                              const val = parseInt(e.target.value);
+                              localStorage.setItem('signatureYOffsetOffline', val.toString());
+                              setOfflineLayout(prev => ({ ...prev, signatureYOffset: val }));
+                            }}
+                          />
+                        </div>
                       </>
                     )}
 
@@ -2548,7 +2588,9 @@ export default function App() {
                                   width: `${offlineLayout.signatureSize}px`, 
                                   height: 'auto', 
                                   mixBlendMode: 'multiply',
-                                  display: 'block'
+                                  display: 'block',
+                                  transform: `translate(${offlineLayout.signatureXOffset}px, ${offlineLayout.signatureYOffset}px)`,
+                                  position: 'relative'
                                 }} 
                               />
                             </div>
@@ -2611,7 +2653,9 @@ export default function App() {
                               width: `${offlineLayout.signatureSize}px`, 
                               height: 'auto', 
                               mixBlendMode: 'multiply',
-                              display: 'block'
+                              display: 'block',
+                              transform: `translate(${offlineLayout.signatureXOffset}px, ${offlineLayout.signatureYOffset}px)`,
+                              position: 'relative'
                             }} 
                           />
                         </div>
