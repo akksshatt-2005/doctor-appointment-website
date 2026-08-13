@@ -2471,6 +2471,20 @@ export default function App() {
                               </div>
                             </div>
                           )}
+
+                          {/* Signature block printed dynamically just below general advice / notes */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '1rem' }}>
+                            <img 
+                              src="/signature.png" 
+                              alt="Dr. Priyadarshi Srivastava Signature" 
+                              style={{ 
+                                width: '220px', 
+                                height: 'auto', 
+                                mixBlendMode: 'multiply',
+                                display: 'block'
+                              }} 
+                            />
+                          </div>
                         </div>
 
                         {/* Right Column: Prescribed Medications (Rx) */}
@@ -2519,21 +2533,9 @@ export default function App() {
                     </div>
 
                     {/* Signature block bottom aligned */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '1.5rem', width: '100%' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <img 
-                          src="/signature.png" 
-                          alt="Dr. Priyadarshi Srivastava Signature" 
-                          style={{ 
-                            width: '180px', 
-                            height: 'auto', 
-                            mixBlendMode: 'multiply',
-                            display: 'block'
-                          }} 
-                        />
-                      </div>
+                    <div>
                       {!offlineLayout.useLetterhead && (
-                        <div style={{ textAlign: 'right', fontSize: '0.65em', color: '#94a3b8', maxWidth: '300px', lineHeight: 1.3 }}>
+                        <div style={{ textAlign: 'center', fontSize: '0.65em', color: '#94a3b8', marginTop: '1.5rem', width: '100%', lineHeight: 1.3 }}>
                           This is a digitally generated secure e-Prescription. Valid without physical signature.
                         </div>
                       )}

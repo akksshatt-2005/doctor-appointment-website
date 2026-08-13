@@ -613,15 +613,26 @@ export async function createPrescription(req, res, next) {
       doc.rect(50, currentY, 495, adviceCardHeight).lineWidth(1).strokeColor('#ccfbf1').stroke();
 
       doc.fillColor('#0f766e').font('Helvetica-Oblique').fontSize(9.5).text(advice, 65, currentY + 8, { width: 465, lineGap: 2 });
+      
+      currentY += adviceCardHeight;
     }
 
-    // 6. Signature block (Anchored at the bottom left)
-    const sigY = useLetterhead ? 590 : 650;
+    // 6. Signature block (Dynamic positioning below general advice / notes)
+    const sigWidth = 195;
+    const sigHeight = sigWidth / 1.5; // ~130pt aspect ratio 1.5:1
+    let sigY = currentY + 15;
+    
+    // Safety check: Ensure signature fits on the page (leaves room for digital validation note if not useLetterhead)
+    const maxAllowedY = useLetterhead ? (842 - 126 - sigHeight) : (765 - sigHeight);
+    if (sigY > maxAllowedY) {
+      sigY = maxAllowedY;
+    }
+
     const signaturePath = path.resolve('assets/signature.png');
     
     if (fs.existsSync(signaturePath)) {
       // Draw signature image (entire logo as shown in attached photo)
-      doc.image(signaturePath, 50, sigY, { width: 155 });
+      doc.image(signaturePath, 50, sigY, { width: sigWidth });
     } else {
       // Fallback text-based signature if file is missing
       doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(50, sigY).lineTo(245, sigY).stroke();
