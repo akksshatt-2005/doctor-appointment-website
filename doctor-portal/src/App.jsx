@@ -21,6 +21,59 @@ const formatPrintDate = (dateStr) => {
   return dateStr;
 };
 
+const ALL_FONTS = [
+  // Sans-serif
+  { name: 'Plus Jakarta Sans', category: 'Sans-serif' },
+  { name: 'Inter', category: 'Sans-serif' },
+  { name: 'Roboto', category: 'Sans-serif' },
+  { name: 'Open Sans', category: 'Sans-serif' },
+  { name: 'Lato', category: 'Sans-serif' },
+  { name: 'Montserrat', category: 'Sans-serif' },
+  { name: 'Poppins', category: 'Sans-serif' },
+  { name: 'Source Sans 3', category: 'Sans-serif' },
+  { name: 'Oswald', category: 'Sans-serif' },
+  { name: 'Raleway', category: 'Sans-serif' },
+  { name: 'Ubuntu', category: 'Sans-serif' },
+  { name: 'Nunito', category: 'Sans-serif' },
+  { name: 'Rubik', category: 'Sans-serif' },
+  { name: 'Work Sans', category: 'Sans-serif' },
+  { name: 'DM Sans', category: 'Sans-serif' },
+  { name: 'Outfit', category: 'Sans-serif' },
+  { name: 'Manrope', category: 'Sans-serif' },
+  { name: 'Fira Sans', category: 'Sans-serif' },
+  
+  // Serif
+  { name: 'Playfair Display', category: 'Serif' },
+  { name: 'Merriweather', category: 'Serif' },
+  { name: 'PT Serif', category: 'Serif' },
+  { name: 'Lora', category: 'Serif' },
+  { name: 'Noto Serif', category: 'Serif' },
+  { name: 'Arvo', category: 'Serif' },
+  { name: 'Crimson Text', category: 'Serif' },
+  { name: 'Libre Baskerville', category: 'Serif' },
+  { name: 'EB Garamond', category: 'Serif' },
+  { name: 'Cardo', category: 'Serif' },
+  { name: 'Cinzel', category: 'Serif' },
+  { name: 'Domine', category: 'Serif' },
+  { name: 'Georgia', category: 'Serif' },
+  
+  // Monospace
+  { name: 'Fira Code', category: 'Monospace' },
+  { name: 'Source Code Pro', category: 'Monospace' },
+  { name: 'Inconsolata', category: 'Monospace' },
+  { name: 'Courier Prime', category: 'Monospace' },
+  { name: 'Share Tech Mono', category: 'Monospace' },
+  
+  // Handwriting / Script
+  { name: 'Dancing Script', category: 'Handwriting' },
+  { name: 'Pacifico', category: 'Handwriting' },
+  { name: 'Caveat', category: 'Handwriting' },
+  { name: 'Great Vibes', category: 'Handwriting' },
+  { name: 'Sacramento', category: 'Handwriting' },
+  { name: 'Satisfy', category: 'Handwriting' },
+  { name: 'Shadows Into Light', category: 'Handwriting' }
+];
+
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('doc_token') || '');
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('doc_user')) || null);
@@ -87,6 +140,8 @@ export default function App() {
   const [editingMedComposition, setEditingMedComposition] = useState('');
   const [editingMedDosage, setEditingMedDosage] = useState('');
   const [showLayoutSettings, setShowLayoutSettings] = useState(false);
+  const [fontSearchQuery, setFontSearchQuery] = useState('');
+  const [showFontDropdown, setShowFontDropdown] = useState(false);
 
   // Socket and Banner state
   const [socketNotification, setSocketNotification] = useState(null);
@@ -124,6 +179,19 @@ export default function App() {
     setActiveVideoAppt(null);
     fetchAppointments();
   };
+
+  useEffect(() => {
+    if (offlineLayout.fontFamily) {
+      const fontId = `gfont-${offlineLayout.fontFamily.replace(/\s+/g, '-').toLowerCase()}`;
+      if (!document.getElementById(fontId) && offlineLayout.fontFamily !== 'Georgia' && offlineLayout.fontFamily !== 'Courier New') {
+        const link = document.createElement('link');
+        link.id = fontId;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(offlineLayout.fontFamily)}:wght@400;600;700;800&display=swap`;
+        document.head.appendChild(link);
+      }
+    }
+  }, [offlineLayout.fontFamily]);
 
   useEffect(() => {
     let jitsiApiInstance = null;
@@ -2283,26 +2351,123 @@ export default function App() {
                       />
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', position: 'relative' }}>
                       <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
                         <span>Font Family</span>
                       </label>
-                      <select
-                        value={offlineLayout.fontFamily || 'Plus Jakarta Sans'}
-                        onChange={e => {
-                          const val = e.target.value;
-                          localStorage.setItem('fontFamilyOffline', val);
-                          setOfflineLayout(prev => ({ ...prev, fontFamily: val }));
+                      
+                      {/* Searchable Dropdown Trigger */}
+                      <button 
+                        type="button"
+                        onClick={() => setShowFontDropdown(!showFontDropdown)}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '0.45rem 0.75rem',
+                          fontSize: '0.8rem',
+                          borderRadius: '6px',
+                          border: '1px solid var(--neutral-border)',
+                          backgroundColor: 'var(--white)',
+                          color: 'var(--neutral-dark)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          width: '100%',
+                          fontWeight: 600
                         }}
-                        style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid var(--neutral-border)', backgroundColor: 'var(--white)', color: 'var(--neutral-dark)', cursor: 'pointer' }}
                       >
-                        <option value="Plus Jakarta Sans">Plus Jakarta Sans (Default)</option>
-                        <option value="Inter">Inter (Clean UI)</option>
-                        <option value="Roboto">Roboto (Standard Sans)</option>
-                        <option value="Georgia">Georgia (Elegant Serif)</option>
-                        <option value="Garamond">Garamond (Classic Serif)</option>
-                        <option value="Courier New">Courier New (Monospace)</option>
-                      </select>
+                        <span>{offlineLayout.fontFamily || 'Plus Jakarta Sans'}</span>
+                        <span style={{ fontSize: '0.6rem', color: '#64748b' }}>▼</span>
+                      </button>
+
+                      {/* Dropdown Box overlay */}
+                      {showFontDropdown && (
+                        <div 
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            marginTop: '4px',
+                            backgroundColor: 'var(--white)',
+                            border: '1px solid var(--neutral-border)',
+                            borderRadius: '8px',
+                            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+                            padding: '0.5rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5rem',
+                            maxHeight: '260px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--neutral-border)', borderRadius: '6px', padding: '0.25rem 0.5rem', backgroundColor: '#f8fafc' }}>
+                            <span style={{ fontSize: '0.8rem', marginRight: '0.25rem' }}>🔍</span>
+                            <input 
+                              type="text" 
+                              placeholder="Search fonts..." 
+                              value={fontSearchQuery}
+                              onChange={e => setFontSearchQuery(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                              style={{
+                                border: 'none',
+                                background: 'transparent',
+                                width: '100%',
+                                fontSize: '0.8rem',
+                                color: 'var(--neutral-dark)',
+                                outline: 'none',
+                                padding: 0
+                              }}
+                            />
+                          </div>
+
+                          <div 
+                            style={{ 
+                              overflowY: 'auto', 
+                              flex: 1, 
+                              display: 'flex', 
+                              flexDirection: 'column',
+                              gap: '2px'
+                            }}
+                          >
+                            {ALL_FONTS.filter(f => f.name.toLowerCase().includes(fontSearchQuery.toLowerCase())).map(f => (
+                              <button
+                                key={f.name}
+                                type="button"
+                                onClick={() => {
+                                  localStorage.setItem('fontFamilyOffline', f.name);
+                                  setOfflineLayout(prev => ({ ...prev, fontFamily: f.name }));
+                                  setShowFontDropdown(false);
+                                  setFontSearchQuery('');
+                                }}
+                                style={{
+                                  padding: '0.35rem 0.5rem',
+                                  fontSize: '0.8rem',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  background: offlineLayout.fontFamily === f.name ? '#e0f2fe' : 'transparent',
+                                  color: offlineLayout.fontFamily === f.name ? '#0369a1' : 'var(--neutral-dark)',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontFamily: f.name === 'Georgia' || f.name === 'Courier New' ? f.name : 'inherit',
+                                  fontWeight: offlineLayout.fontFamily === f.name ? 700 : 'normal',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <span>{f.name}</span>
+                                <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>{f.category}</span>
+                              </button>
+                            ))}
+                            {ALL_FONTS.filter(f => f.name.toLowerCase().includes(fontSearchQuery.toLowerCase())).length === 0 && (
+                              <div style={{ padding: '0.5rem', fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>
+                                No matching fonts found
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
