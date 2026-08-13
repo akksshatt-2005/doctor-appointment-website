@@ -73,7 +73,8 @@ export default function App() {
     signatureSize: parseInt(localStorage.getItem('signatureSizeOffline')) || 220,
     signaturePosition: localStorage.getItem('signaturePositionOffline') || 'inline',
     signatureXOffset: parseInt(localStorage.getItem('signatureXOffsetOffline')) || 0,
-    signatureYOffset: parseInt(localStorage.getItem('signatureYOffsetOffline')) || 0
+    signatureYOffset: parseInt(localStorage.getItem('signatureYOffsetOffline')) || 0,
+    fontFamily: localStorage.getItem('fontFamilyOffline') || 'Plus Jakarta Sans'
   });
 
   // Medicine Inventory State
@@ -828,7 +829,9 @@ export default function App() {
           signatureSize: offlineLayout.signatureSize,
           signaturePosition: offlineLayout.signaturePosition,
           signatureXOffset: offlineLayout.signatureXOffset,
-          signatureYOffset: offlineLayout.signatureYOffset
+          signatureYOffset: offlineLayout.signatureYOffset,
+          fontFamily: offlineLayout.fontFamily,
+          fontSize: offlineLayout.fontSize
         })
       });
 
@@ -2282,6 +2285,28 @@ export default function App() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                       <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Font Family</span>
+                      </label>
+                      <select
+                        value={offlineLayout.fontFamily || 'Plus Jakarta Sans'}
+                        onChange={e => {
+                          const val = e.target.value;
+                          localStorage.setItem('fontFamilyOffline', val);
+                          setOfflineLayout(prev => ({ ...prev, fontFamily: val }));
+                        }}
+                        style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid var(--neutral-border)', backgroundColor: 'var(--white)', color: 'var(--neutral-dark)', cursor: 'pointer' }}
+                      >
+                        <option value="Plus Jakarta Sans">Plus Jakarta Sans (Default)</option>
+                        <option value="Inter">Inter (Clean UI)</option>
+                        <option value="Roboto">Roboto (Standard Sans)</option>
+                        <option value="Georgia">Georgia (Elegant Serif)</option>
+                        <option value="Garamond">Garamond (Classic Serif)</option>
+                        <option value="Courier New">Courier New (Monospace)</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
                         <span>Font Size (Base)</span>
                         <span>{offlineLayout.fontSize}px</span>
                       </label>
@@ -2459,7 +2484,7 @@ export default function App() {
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
-                      fontFamily: 'var(--font-family)',
+                      fontFamily: offlineLayout.fontFamily || 'Plus Jakarta Sans',
                       position: 'relative',
                       boxSizing: 'border-box'
                     }}
@@ -2469,7 +2494,7 @@ export default function App() {
                       {!offlineLayout.useLetterhead && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '2px solid #0f766e', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
                           <div>
-                            <div style={{ fontWeight: 800, fontSize: '1.45em', color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: 'var(--font-family)' }}>MENTAL WELLNESS CLINIC</div>
+                            <div style={{ fontWeight: 800, fontSize: '1.45em', color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: offlineLayout.fontFamily || 'Plus Jakarta Sans' }}>MENTAL WELLNESS CLINIC</div>
                             <div style={{ fontSize: '0.8em', fontWeight: 600, color: '#475569', marginTop: '0.15rem' }}>Mind & Brain Specialist Centre</div>
                             <div style={{ color: '#64748b', fontSize: '0.7em', marginTop: '0.1rem' }}>Ugf 19, Subash Chandra Bose Complex, Chowk, Lucknow, UP</div>
                           </div>

@@ -444,7 +444,7 @@ export async function updateAppointmentStatusByPatient(req, res, next) {
 
 export async function createPrescription(req, res, next) {
   const { id } = req.params;
-  const { diagnosis, medications, advice, useLetterhead, showSignature, signatureSize, signaturePosition, signatureXOffset, signatureYOffset } = req.body;
+  const { diagnosis, medications, advice, useLetterhead, showSignature, signatureSize, signaturePosition, signatureXOffset, signatureYOffset, fontFamily, fontSize } = req.body;
 
   if (!diagnosis || !medications || !Array.isArray(medications)) {
     return res.status(400).json({
@@ -483,6 +483,21 @@ export async function createPrescription(req, res, next) {
     });
 
     // Generate PDF prescription
+    let pdfFontBody = 'Helvetica';
+    let pdfFontBold = 'Helvetica-Bold';
+    let pdfFontItalic = 'Helvetica-Oblique';
+
+    const chosenFont = fontFamily || 'Plus Jakarta Sans';
+    if (chosenFont.toLowerCase().includes('courier')) {
+      pdfFontBody = 'Courier';
+      pdfFontBold = 'Courier-Bold';
+      pdfFontItalic = 'Courier-Oblique';
+    } else if (chosenFont.toLowerCase().includes('georgia') || chosenFont.toLowerCase().includes('garamond') || chosenFont.toLowerCase().includes('serif') || chosenFont.toLowerCase().includes('times')) {
+      pdfFontBody = 'Times-Roman';
+      pdfFontBold = 'Times-Bold';
+      pdfFontItalic = 'Times-Italic';
+    }
+
     const dirPath = path.resolve('uploads/prescriptions');
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true });
@@ -499,15 +514,17 @@ export async function createPrescription(req, res, next) {
     const writeStream = fs.createWriteStream(pdfPath);
     doc.pipe(writeStream);
 
+    const scale = fontSize ? (parseFloat(fontSize) / 13) : 1;
+
     if (!useLetterhead) {
       // 1. Premium Letterhead Header
-      doc.fillColor('#0f766e').font('Helvetica-Bold').fontSize(22).text('NEURO HARMONY CLINIC', 50, 50);
-      doc.fillColor('#475569').font('Helvetica').fontSize(9.5).text('Mind & Brain Specialist Centre', 50, 76);
-      doc.fillColor('#64748b').fontSize(8.5).text('Ugf 19, Subash Chandra Bose Complex, Chowk, Lucknow, UP', 50, 90);
+      doc.fillColor('#0f766e').font(pdfFontBold).fontSize(22).text('NEURO HARMONY CLINIC', 50, 50);
+      doc.fillColor('#475569').font(pdfFontBody).fontSize(9.5).text('Mind & Brain Specialist Centre', 50, 76);
+      doc.fillColor('#64748b').font(pdfFontBody).fontSize(8.5).text('Ugf 19, Subash Chandra Bose Complex, Chowk, Lucknow, UP', 50, 90);
 
-      doc.fillColor('#0d9488').font('Helvetica-Bold').fontSize(11).text('Consultant Neuropsychiatrist', 350, 50, { align: 'right', width: 195 });
-      doc.fillColor('#1e293b').font('Helvetica').fontSize(9.5).text('Dr. Priyadarshi Srivastava', 350, 66, { align: 'right', width: 195 });
-      doc.fillColor('#64748b').fontSize(8.5).text('Telemedicine Consultation', 350, 80, { align: 'right', width: 195 });
+      doc.fillColor('#0d9488').font(pdfFontBold).fontSize(11).text('Consultant Neuropsychiatrist', 350, 50, { align: 'right', width: 195 });
+      doc.fillColor('#1e293b').font(pdfFontBody).fontSize(9.5).text('Dr. Priyadarshi Srivastava', 350, 66, { align: 'right', width: 195 });
+      doc.fillColor('#64748b').font(pdfFontBody).fontSize(8.5).text('Telemedicine Consultation', 350, 80, { align: 'right', width: 195 });
 
       // Teal Divider Line
       doc.strokeColor('#0d9488').lineWidth(1.5).moveTo(50, 120).lineTo(545, 120).stroke();
@@ -517,7 +534,7 @@ export async function createPrescription(req, res, next) {
     const patientMetaBoxY = startY + 12;
 
     // 2. Structured Patient Information Grid
-    doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(8).text('PATIENT METADATA', 50, startY);
+    doc.fillColor('#64748b').font(pdfFontBold).fontSize(8 * scale).text('PATIENT METADATA', 50, startY);
 
     // Box border
     doc.rect(50, patientMetaBoxY, 495, 54).lineWidth(1).strokeColor('#cbd5e1').stroke();
@@ -527,22 +544,22 @@ export async function createPrescription(req, res, next) {
     doc.moveTo(50, patientMetaBoxY + 27).lineTo(545, patientMetaBoxY + 27).strokeColor('#cbd5e1').stroke();
 
     // Metadata entries
-    doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(7.5).text('PATIENT NAME', 60, patientMetaBoxY + 6);
-    doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(9.5).text(appointment.patientName, 60, patientMetaBoxY + 15);
+    doc.fillColor('#64748b').font(pdfFontBold).fontSize(7.5 * scale).text('PATIENT NAME', 60, patientMetaBoxY + 6);
+    doc.fillColor('#1e293b').font(pdfFontBold).fontSize(9.5 * scale).text(appointment.patientName, 60, patientMetaBoxY + 15);
 
-    doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(7.5).text('DATE OF CONSULTATION', 307, patientMetaBoxY + 6);
-    doc.fillColor('#1e293b').font('Helvetica').fontSize(9.5).text(new Date(appointment.appointmentDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }), 307, patientMetaBoxY + 15);
+    doc.fillColor('#64748b').font(pdfFontBold).fontSize(7.5 * scale).text('DATE OF CONSULTATION', 307, patientMetaBoxY + 6);
+    doc.fillColor('#1e293b').font(pdfFontBody).fontSize(9.5 * scale).text(new Date(appointment.appointmentDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }), 307, patientMetaBoxY + 15);
 
-    doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(7.5).text('AGE / GENDER', 60, patientMetaBoxY + 33);
-    doc.fillColor('#1e293b').font('Helvetica').fontSize(9.5).text(`${appointment.patientAge} Yrs / Self`, 60, patientMetaBoxY + 42);
+    doc.fillColor('#64748b').font(pdfFontBold).fontSize(7.5 * scale).text('AGE / GENDER', 60, patientMetaBoxY + 33);
+    doc.fillColor('#1e293b').font(pdfFontBody).fontSize(9.5 * scale).text(`${appointment.patientAge} Yrs / Self`, 60, patientMetaBoxY + 42);
 
-    doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(7.5).text('RX ID / BOOKING ID', 307, patientMetaBoxY + 33);
-    doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(9.5).text(appointment.bookingId, 307, patientMetaBoxY + 42);
+    doc.fillColor('#64748b').font(pdfFontBold).fontSize(7.5 * scale).text('RX ID / BOOKING ID', 307, patientMetaBoxY + 33);
+    doc.fillColor('#1e293b').font(pdfFontBold).fontSize(9.5 * scale).text(appointment.bookingId, 307, patientMetaBoxY + 42);
 
     // 3. Medications Title with Decorative Rx Symbol
     const rxSymbolY = patientMetaBoxY + 54 + 16;
-    doc.fillColor('#0d9488').font('Helvetica-Bold').fontSize(26).text('℞', 50, rxSymbolY);
-    doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(11).text('PRESCRIBED MEDICATIONS', 78, rxSymbolY + 8);
+    doc.fillColor('#0d9488').font(pdfFontBold).fontSize(26 * scale).text('℞', 50, rxSymbolY);
+    doc.fillColor('#1e293b').font(pdfFontBold).fontSize(11 * scale).text('PRESCRIBED MEDICATIONS', 78, rxSymbolY + 8);
 
     // 4. Modern Medications Table
     let tableY = 252;
@@ -550,7 +567,7 @@ export async function createPrescription(req, res, next) {
     doc.rect(50, tableY, 495, 20).fill('#0f766e');
     
     // Header Column Labels
-    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(8.5);
+    doc.fillColor('#ffffff').font(pdfFontBold).fontSize(8.5 * scale);
     doc.text('MEDICINE (GENERIC / BRAND)', 60, tableY + 6, { width: 220 });
     doc.text('DOSAGE', 280, tableY + 6, { width: 110 });
     doc.text('FREQUENCY & INSTRUCTIONS', 400, tableY + 6, { width: 130 });
@@ -567,15 +584,15 @@ export async function createPrescription(req, res, next) {
       }
       
       if (hasComposition) {
-        doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(9.5).text(med.name, 60, currentY + 5, { width: 220 });
-        doc.fillColor('#b91c1c').font('Helvetica-Oblique').fontSize(8).text(`(${med.composition.trim()})`, 60, currentY + 17, { width: 220 });
+        doc.fillColor('#1e293b').font(pdfFontBold).fontSize(9.5 * scale).text(med.name, 60, currentY + 5, { width: 220 });
+        doc.fillColor('#b91c1c').font(pdfFontItalic).fontSize(8 * scale).text(`(${med.composition.trim()})`, 60, currentY + 17, { width: 220 });
         
-        doc.fillColor('#475569').font('Helvetica').fontSize(9.5).text(med.dosage, 280, currentY + 11, { width: 110 });
-        doc.fillColor('#475569').font('Helvetica').fontSize(9.5).text(med.frequency || med.freq || '', 400, currentY + 11, { width: 135 });
+        doc.fillColor('#475569').font(pdfFontBody).fontSize(9.5 * scale).text(med.dosage, 280, currentY + 11, { width: 110 });
+        doc.fillColor('#475569').font(pdfFontBody).fontSize(9.5 * scale).text(med.frequency || med.freq || '', 400, currentY + 11, { width: 135 });
       } else {
-        doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(9.5).text(med.name, 60, currentY + 7, { width: 220 });
-        doc.fillColor('#475569').font('Helvetica').fontSize(9.5).text(med.dosage, 280, currentY + 7, { width: 110 });
-        doc.fillColor('#475569').font('Helvetica').fontSize(9.5).text(med.frequency || med.freq || '', 400, currentY + 7, { width: 135 });
+        doc.fillColor('#1e293b').font(pdfFontBold).fontSize(9.5 * scale).text(med.name, 60, currentY + 7, { width: 220 });
+        doc.fillColor('#475569').font(pdfFontBody).fontSize(9.5 * scale).text(med.dosage, 280, currentY + 7, { width: 110 });
+        doc.fillColor('#475569').font(pdfFontBody).fontSize(9.5 * scale).text(med.frequency || med.freq || '', 400, currentY + 7, { width: 135 });
       }
 
       // Clean bottom border divider
@@ -587,7 +604,7 @@ export async function createPrescription(req, res, next) {
 
     // 5. Styled Card Panels for Notes & Advice
     // Diagnosis Card
-    doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(8).text('DIAGNOSIS & CLINICAL NOTES', 50, currentY);
+    doc.fillColor('#64748b').font(pdfFontBold).fontSize(8 * scale).text('DIAGNOSIS & CLINICAL NOTES', 50, currentY);
     currentY += 12;
 
     const diagTextHeight = doc.heightOfString(diagnosis, { width: 465 });
@@ -597,12 +614,12 @@ export async function createPrescription(req, res, next) {
     doc.rect(50, currentY, 4, diagCardHeight).fill('#0f766e'); // Accent bar
     doc.rect(50, currentY, 495, diagCardHeight).lineWidth(1).strokeColor('#e2e8f0').stroke();
 
-    doc.fillColor('#1e293b').font('Helvetica').fontSize(9.5).text(diagnosis, 65, currentY + 8, { width: 465, lineGap: 2 });
+    doc.fillColor('#1e293b').font(pdfFontBody).fontSize(9.5 * scale).text(diagnosis, 65, currentY + 8, { width: 465, lineGap: 2 });
     currentY += diagCardHeight + 16;
 
     // Advice Card
     if (advice) {
-      doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(8).text('GENERAL ADVICE & FOLLOW-UP INSTRUCTIONS', 50, currentY);
+      doc.fillColor('#64748b').font(pdfFontBold).fontSize(8 * scale).text('GENERAL ADVICE & FOLLOW-UP INSTRUCTIONS', 50, currentY);
       currentY += 12;
 
       const adviceTextHeight = doc.heightOfString(advice, { width: 465 });
@@ -612,7 +629,7 @@ export async function createPrescription(req, res, next) {
       doc.rect(50, currentY, 4, adviceCardHeight).fill('#0d9488'); // Dark Teal bar
       doc.rect(50, currentY, 495, adviceCardHeight).lineWidth(1).strokeColor('#ccfbf1').stroke();
 
-      doc.fillColor('#0f766e').font('Helvetica-Oblique').fontSize(9.5).text(advice, 65, currentY + 8, { width: 465, lineGap: 2 });
+      doc.fillColor('#0f766e').font(pdfFontItalic).fontSize(9.5 * scale).text(advice, 65, currentY + 8, { width: 465, lineGap: 2 });
       
       currentY += adviceCardHeight;
     }
@@ -648,14 +665,14 @@ export async function createPrescription(req, res, next) {
       } else {
         // Fallback text-based signature if file is missing
         doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(finalX, finalY).lineTo(finalX + 195, finalY).stroke();
-        doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(10).text('Dr. Priyadarshi Srivastava', finalX, finalY + 6, { width: 195 });
-        doc.fillColor('#64748b').font('Helvetica').fontSize(8.5).text('Consultant Neuropsychiatrist\nNeuro Harmony Clinic', finalX, finalY + 19, { width: 195 });
+        doc.fillColor('#1e293b').font(pdfFontBold).fontSize(10 * scale).text('Dr. Priyadarshi Srivastava', finalX, finalY + 6, { width: 195 });
+        doc.fillColor('#64748b').font(pdfFontBody).fontSize(8.5 * scale).text('Consultant Neuropsychiatrist\nNeuro Harmony Clinic', finalX, finalY + 19, { width: 195 });
       }
     }
 
     // Digital Authentication Note
     if (!useLetterhead) {
-      doc.fillColor('#94a3b8').font('Helvetica').fontSize(8).text('This is a digitally generated secure e-Prescription. Signature not required for digital validity.', 50, 765, { align: 'center', width: 495 });
+      doc.fillColor('#94a3b8').font(pdfFontBody).fontSize(8 * scale).text('This is a digitally generated secure e-Prescription. Signature not required for digital validity.', 50, 765, { align: 'center', width: 495 });
     }
 
     doc.end();
