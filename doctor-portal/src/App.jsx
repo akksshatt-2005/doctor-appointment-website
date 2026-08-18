@@ -685,26 +685,13 @@ export default function App() {
     alert(`Added "${med.name}" to current prescription!`);
   };
 
-  // Start new follow-up visit for an old patient
-  const startNewFollowUpFromPatient = async (rx) => {
+  // Start new follow-up visit for an old patient (1 Patient = 1 Lifetime Reference ID)
+  const startNewFollowUpFromPatient = (rx) => {
     setSelectedOfflineRxId(null);
     setOriginalConsultDate('');
-    
-    let nextRef = '';
-    try {
-      const response = await fetch(`${API_BASE_URL}/doctor/offline-prescriptions/next-reference`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (data.success) {
-        nextRef = data.nextReferenceId;
-      }
-    } catch (err) {
-      console.error(err);
-    }
 
     setOfflineForm({
-      referenceId: nextRef || '',
+      referenceId: rx.referenceId || '', // PRESERVE LIFETIME REFERENCE ID
       patientName: rx.patientName,
       patientAge: rx.patientAge,
       patientGender: rx.patientGender,
@@ -721,7 +708,7 @@ export default function App() {
       followUpDate: ''
     });
     setTempMed({ name: '', composition: '', dosage: '', frequency: '' });
-    // Expand the most recent past visit automatically
+    // Expand the past visit so the doctor sees previous history immediately
     setExpandedRxHistoryIds(new Set([rx.id]));
   };
 
@@ -750,6 +737,24 @@ export default function App() {
     });
     return found || null;
   }, [offlineForm.referenceId, offlineRxList, selectedOfflineRxId]);
+
+  // Detect if patient name or phone matches an existing patient in database (for lifetime Ref ID)
+  const existingPatientMatch = React.useMemo(() => {
+    if (selectedOfflineRxId) return null;
+    const currentName = (offlineForm.patientName || '').trim().toLowerCase();
+    const currentPhone = (offlineForm.patientPhone || '').trim();
+    if (!currentName && !currentPhone) return null;
+
+    const found = offlineRxList.find(rx => {
+      const rxPhone = (rx.patientPhone || '').trim();
+      const rxName = (rx.patientName || '').trim().toLowerCase();
+      if (currentPhone && rxPhone && rxPhone === currentPhone) return true;
+      if (currentName && rxName && (rxName === currentName || (currentName.length >= 3 && rxName === currentName))) return true;
+      return false;
+    });
+
+    return found || null;
+  }, [offlineForm.patientName, offlineForm.patientPhone, offlineRxList, selectedOfflineRxId]);
 
   // Socket.io real-time events listener
   useEffect(() => {
@@ -2094,7 +2099,7 @@ export default function App() {
                       </span>
                     </div>
                     <div>
-                      Patient: <strong>{matchedOldPatientRecord.patientName}</strong> ({matchedOldPatientRecord.patientAge} Yrs, {matchedOldPatientRecord.patientGender}) • All older visits are available below!
+                      Patient: <strong>{matchedOldPatientRecord.patientName}</strong> ({matchedOldPatientRecord.patientAge} Yrs, {matchedOldPatientRecord.patientGender}) • Lifetime Ref: <strong>{matchedOldPatientRecord.referenceId}</strong>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
                       <button 
@@ -2103,7 +2108,7 @@ export default function App() {
                         className="btn btn-primary"
                         style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
                       >
-                        ⚡ Start Today's Follow-up (Auto-assign Next Ref)
+                        ⚡ Start Today's Follow-up (Keep Ref {matchedOldPatientRecord.referenceId})
                       </button>
                       <button 
                         type="button" 
@@ -2142,6 +2147,44 @@ export default function App() {
                     />
                   </div>
                 </div>
+
+                {/* Recognized Old Patient Badge when typing Name or Phone */}
+                {existingPatientMatch && offlineForm.referenceId !== existingPatientMatch.referenceId && (
+                  <div style={{
+                    padding: '0.65rem 0.9rem',
+                    backgroundColor: '#f0fdfa',
+                    border: '1.5px solid #0f766e',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    color: '#0f766e',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    animation: 'rxSlideDown 0.2s ease-out'
+                  }}>
+                    <div>
+                      <span>✨ <strong>Old Patient Recognized:</strong> {existingPatientMatch.patientName} (Lifetime Ref: <strong>{existingPatientMatch.referenceId}</strong>)</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setOfflineForm(prev => ({
+                          ...prev,
+                          referenceId: existingPatientMatch.referenceId,
+                          patientName: existingPatientMatch.patientName,
+                          patientAge: existingPatientMatch.patientAge,
+                          patientGender: existingPatientMatch.patientGender,
+                          patientPhone: existingPatientMatch.patientPhone || prev.patientPhone
+                        }));
+                      }}
+                      className="btn btn-primary"
+                      style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                    >
+                      Apply Lifetime Ref ({existingPatientMatch.referenceId})
+                    </button>
+                  </div>
+                )}
 
                 {/* Patient Information Row 2: Age & Gender */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
