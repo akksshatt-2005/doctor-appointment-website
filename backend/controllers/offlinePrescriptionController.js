@@ -50,10 +50,10 @@ export async function createOfflinePrescription(req, res) {
       });
     }
 
-    let finalReferenceId = referenceId || null;
+    const currentYear = new Date().getFullYear();
+    let finalReferenceId = referenceId ? (referenceId.includes('/') ? referenceId.trim() : `${referenceId.trim()}/${currentYear}`) : null;
     if (!id && !finalReferenceId) {
       // Auto-generate referenceId
-      const currentYear = new Date().getFullYear();
       const startOfYear = new Date(currentYear, 0, 1);
       const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
       const prescriptionsInYear = await prisma.offlinePrescription.findMany({

@@ -13,7 +13,8 @@ const getLocalDateStr = (d = new Date()) => {
 
 const formatPrintDate = (dateStr) => {
   if (!dateStr) return '';
-  const parts = dateStr.split('-');
+  const cleanStr = String(dateStr).split('T')[0];
+  const parts = cleanStr.split('-');
   if (parts.length === 3) {
     const [year, month, day] = parts;
     return `${day}/${month}/${year}`;
@@ -96,6 +97,9 @@ export default function App() {
   const [originalConsultDate, setOriginalConsultDate] = useState('');
   
   const [rxSearchQuery, setRxSearchQuery] = useState('');
+  const [expandedRxHistoryIds, setExpandedRxHistoryIds] = useState(new Set());
+  const [quickLookupQuery, setQuickLookupQuery] = useState('');
+  const [showQuickLookupDropdown, setShowQuickLookupDropdown] = useState(false);
   const [tempMed, setTempMed] = useState({ name: '', composition: '', dosage: '', frequency: '' });
   const [offlineForm, setOfflineForm] = useState({
     referenceId: '',
@@ -609,6 +613,143 @@ export default function App() {
       medications: updatedMeds
     }));
   };
+
+  // Toggle accordion card in previous prescriptions history
+  const toggleRxHistoryAccordion = (rxId) => {
+    setExpandedRxHistoryIds(prev => {
+      const next = new Set(prev);
+      if (next.has(rxId)) {
+        next.delete(rxId);
+      } else {
+        next.add(rxId);
+      }
+      return next;
+    });
+  };
+
+  // Get all previous prescriptions matching currently entered patient / reference
+  const getPatientHistoryPrescriptions = () => {
+    const currentName = (offlineForm.patientName || '').trim().toLowerCase();
+    const currentPhone = (offlineForm.patientPhone || '').trim();
+    const currentRef = (offlineForm.referenceId || '').trim().toLowerCase();
+
+    if (!currentName && !currentPhone && !currentRef) {
+      return [];
+    }
+
+    const matched = offlineRxList.filter(rx => {
+      const rxPhone = (rx.patientPhone || '').trim();
+      if (currentPhone && rxPhone && rxPhone === currentPhone) {
+        return true;
+      }
+      const rxName = (rx.patientName || '').trim().toLowerCase();
+      if (currentName && rxName && (rxName === currentName || rxName.includes(currentName) || currentName.includes(rxName))) {
+        return true;
+      }
+      const rxRef = (rx.referenceId || '').trim().toLowerCase();
+      if (currentRef && rxRef && rxRef === currentRef) {
+        return true;
+      }
+      return false;
+    });
+
+    matched.sort((a, b) => {
+      const dateA = new Date(a.consultDate || a.createdAt || 0);
+      const dateB = new Date(b.consultDate || b.createdAt || 0);
+      return dateB - dateA;
+    });
+
+    return matched;
+  };
+
+  // Copy all medications from past prescription into current form
+  const copyAllMedsFromHistory = (rx) => {
+    const meds = typeof rx.medications === 'string' ? JSON.parse(rx.medications) : (rx.medications || []);
+    if (!meds || meds.length === 0) {
+      alert('This past prescription does not contain any medications to copy.');
+      return;
+    }
+    setOfflineForm(prev => ({
+      ...prev,
+      medications: [...(prev.medications || []), ...meds]
+    }));
+    alert(`Copied ${meds.length} medicine(s) into current prescription!`);
+  };
+
+  // Copy single medication from past prescription into current form
+  const copySingleMedFromHistory = (med) => {
+    setOfflineForm(prev => ({
+      ...prev,
+      medications: [...(prev.medications || []), { ...med }]
+    }));
+    alert(`Added "${med.name}" to current prescription!`);
+  };
+
+  // Start new follow-up visit for an old patient
+  const startNewFollowUpFromPatient = async (rx) => {
+    setSelectedOfflineRxId(null);
+    setOriginalConsultDate('');
+    
+    let nextRef = '';
+    try {
+      const response = await fetch(`${API_BASE_URL}/doctor/offline-prescriptions/next-reference`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        nextRef = data.nextReferenceId;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
+    setOfflineForm({
+      referenceId: nextRef || '',
+      patientName: rx.patientName,
+      patientAge: rx.patientAge,
+      patientGender: rx.patientGender,
+      patientPhone: rx.patientPhone || '',
+      consultDate: getLocalDateStr(),
+      diagnosis: '',
+      chiefComplaints: '',
+      bp: '',
+      pulse: '',
+      weight: rx.weight || '',
+      medications: [],
+      advice: '',
+      requiredTests: '',
+      followUpDate: ''
+    });
+    setTempMed({ name: '', composition: '', dosage: '', frequency: '' });
+    // Expand the most recent past visit automatically
+    setExpandedRxHistoryIds(new Set([rx.id]));
+  };
+
+  // Helper to filter quick lookup results
+  const getQuickLookupResults = () => {
+    if (!quickLookupQuery.trim()) return [];
+    const q = quickLookupQuery.trim().toLowerCase();
+    return offlineRxList.filter(rx => {
+      const ref = (rx.referenceId || '').toLowerCase();
+      const name = (rx.patientName || '').toLowerCase();
+      const phone = (rx.patientPhone || '').toLowerCase();
+      const id = (rx.id || '').toLowerCase();
+      const serialPart = ref.split('/')[0];
+      return ref.includes(q) || name.includes(q) || phone.includes(q) || id.includes(q) || serialPart === q;
+    }).slice(0, 12);
+  };
+
+  // Detect if manually typed reference ID matches an existing patient
+  const matchedOldPatientRecord = React.useMemo(() => {
+    if (!offlineForm.referenceId || !offlineForm.referenceId.trim()) return null;
+    const ref = offlineForm.referenceId.trim().toLowerCase();
+    const found = offlineRxList.find(rx => {
+      const rxRef = (rx.referenceId || '').trim().toLowerCase();
+      const rxSerial = rxRef.split('/')[0];
+      return (rxRef === ref || rxSerial === ref) && (!selectedOfflineRxId || selectedOfflineRxId !== rx.id);
+    });
+    return found || null;
+  }, [offlineForm.referenceId, offlineRxList, selectedOfflineRxId]);
 
   // Socket.io real-time events listener
   useEffect(() => {
@@ -1464,8 +1605,8 @@ export default function App() {
         {dashboardView === 'offline-rx' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             
-            {/* Toggle Sidebar Button (Hamburger Menu) */}
-            <div className="no-print" style={{ display: 'flex', alignItems: 'center' }}>
+            {/* Top Workspace Controls: Sidebar Toggle & Quick Patient / Serial Search Bar */}
+            <div className="no-print" style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '1rem', alignItems: 'center' }}>
               <button 
                 type="button"
                 onClick={() => setSidebarOpen(prev => !prev)}
@@ -1474,7 +1615,7 @@ export default function App() {
                   color: sidebarOpen ? 'var(--primary)' : 'var(--white)',
                   border: '1px solid var(--primary)',
                   borderRadius: '8px',
-                  padding: '0.5rem 1rem',
+                  padding: '0.6rem 1.1rem',
                   fontSize: '0.85rem',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -1483,11 +1624,114 @@ export default function App() {
                   gap: '0.5rem',
                   boxShadow: 'var(--shadow-sm)',
                   transition: 'all 0.15s ease',
-                  outline: 'none'
+                  outline: 'none',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                <span>☰</span> {sidebarOpen ? 'Hide Database & Saved Rx' : 'Show Database & Saved Rx'}
+                <span>☰</span> {sidebarOpen ? 'Hide Saved Rx List' : 'Show Saved Rx List'}
               </button>
+
+              {/* Quick Patient & Serial No Search Bar */}
+              <div style={{ position: 'relative', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--white)', border: '1.5px solid var(--primary)', borderRadius: '8px', padding: '0.2rem 0.75rem', boxShadow: 'var(--shadow-sm)' }}>
+                  <span style={{ fontSize: '1.1rem', marginRight: '0.5rem' }}>🔍</span>
+                  <input 
+                    type="text" 
+                    placeholder="Search Old Patient by Serial / Ref No (e.g. 58 or 58/2026), Patient Name, or Mobile..."
+                    value={quickLookupQuery}
+                    onChange={e => {
+                      setQuickLookupQuery(e.target.value);
+                      setShowQuickLookupDropdown(true);
+                    }}
+                    onFocus={() => setShowQuickLookupDropdown(true)}
+                    style={{ border: 'none', outline: 'none', padding: '0.45rem 0', fontSize: '0.88rem', width: '100%', backgroundColor: 'transparent' }}
+                  />
+                  {quickLookupQuery && (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setQuickLookupQuery('');
+                        setShowQuickLookupDropdown(false);
+                      }}
+                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '0.9rem', padding: '0 0.25rem' }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Autocomplete Dropdown */}
+                {showQuickLookupDropdown && quickLookupQuery.trim() && (
+                  <div className="quick-lookup-dropdown" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0.6rem', borderBottom: '1px solid #e2e8f0', fontSize: '0.75rem', color: '#64748b', fontWeight: 700 }}>
+                      <span>Matching Patient Prescriptions ({getQuickLookupResults().length})</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowQuickLookupDropdown(false)}
+                        style={{ background: 'transparent', border: 'none', color: '#0f766e', cursor: 'pointer', fontWeight: 700 }}
+                      >
+                        Close ✕
+                      </button>
+                    </div>
+
+                    {getQuickLookupResults().length === 0 ? (
+                      <div style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                        No past prescriptions found matching "{quickLookupQuery}".
+                      </div>
+                    ) : (
+                      getQuickLookupResults().map(rx => {
+                        const medCount = (typeof rx.medications === 'string' ? JSON.parse(rx.medications) : (rx.medications || [])).length;
+                        return (
+                          <div key={rx.id} className="quick-lookup-item">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ fontWeight: 800, color: 'var(--neutral-dark)', fontSize: '0.9rem' }}>{rx.patientName}</span>
+                                {rx.referenceId && (
+                                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', backgroundColor: '#ccfbf1', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                                    Ref: {rx.referenceId}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--neutral-body)' }}>
+                                {rx.patientAge} Yrs / {rx.patientGender} • {formatPrintDate(rx.consultDate || rx.createdAt)} • {medCount} Meds Prescribed
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button 
+                                type="button" 
+                                className="btn btn-primary"
+                                onClick={() => {
+                                  startNewFollowUpFromPatient(rx);
+                                  setShowQuickLookupDropdown(false);
+                                  setQuickLookupQuery('');
+                                }}
+                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                                title="Start a fresh follow-up visit for this patient with new Serial Ref ID"
+                              >
+                                ⚡ Start Today's Visit
+                              </button>
+                              <button 
+                                type="button" 
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                  loadOfflinePrescription(rx);
+                                  setShowQuickLookupDropdown(false);
+                                  setQuickLookupQuery('');
+                                  setExpandedRxHistoryIds(new Set([rx.id]));
+                                }}
+                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                                title="Load and inspect this exact past prescription"
+                              >
+                                📁 Open Past Rx
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="offline-rx-workspace" style={{ display: 'grid', gridTemplateColumns: sidebarOpen ? '280px 1fr' : '1fr', gap: '2rem', alignItems: 'start' }}>
@@ -1802,10 +2046,10 @@ export default function App() {
                 {/* Reference ID & Consultation Date Row */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Reference ID (Auto-Generated / Editable)</label>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Reference ID / Serial No (Auto / Editable)</label>
                     <input 
                       type="text" 
-                      placeholder="e.g. 104/2026"
+                      placeholder="e.g. 104/2026 or 58"
                       value={offlineForm.referenceId}
                       onChange={e => setOfflineForm(prev => ({ ...prev, referenceId: e.target.value }))}
                     />
@@ -1828,6 +2072,53 @@ export default function App() {
                     />
                   </div>
                 </div>
+
+                {/* Smart Match Banner for Manual Serial / Ref Entry */}
+                {matchedOldPatientRecord && (
+                  <div style={{
+                    padding: '0.75rem 1rem',
+                    backgroundColor: '#fef3c7',
+                    border: '1.5px solid #f59e0b',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    color: '#92400e',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.45rem',
+                    animation: 'rxSlideDown 0.2s ease-out'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong>✨ Found Existing Patient for Ref {matchedOldPatientRecord.referenceId}</strong>
+                      <span style={{ fontSize: '0.75rem', color: '#78350f', fontWeight: 600 }}>
+                        {formatPrintDate(matchedOldPatientRecord.consultDate || matchedOldPatientRecord.createdAt)}
+                      </span>
+                    </div>
+                    <div>
+                      Patient: <strong>{matchedOldPatientRecord.patientName}</strong> ({matchedOldPatientRecord.patientAge} Yrs, {matchedOldPatientRecord.patientGender}) • All older visits are available below!
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => startNewFollowUpFromPatient(matchedOldPatientRecord)}
+                        className="btn btn-primary"
+                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                      >
+                        ⚡ Start Today's Follow-up (Auto-assign Next Ref)
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          loadOfflinePrescription(matchedOldPatientRecord);
+                          setExpandedRxHistoryIds(new Set([matchedOldPatientRecord.id]));
+                        }}
+                        className="btn btn-secondary"
+                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                      >
+                        ✏️ Load & Edit This Record
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Patient Information Row 1: Name & Phone */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -2858,6 +3149,231 @@ export default function App() {
                     </div>
 
                   </div>
+                </div>
+
+                {/* Previous Prescriptions History Accordion (Rendered directly beneath Printable Prescription Sheet) */}
+                <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                  
+                  {/* Section Title & Summary */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span>📁</span> Patient Previous Prescriptions History
+                      </h4>
+                      {getPatientHistoryPrescriptions().length > 0 && (
+                        <span className="badge badge-success" style={{ fontSize: '0.75rem', padding: '0.2rem 0.55rem' }}>
+                          {getPatientHistoryPrescriptions().length} {getPatientHistoryPrescriptions().length === 1 ? 'Visit' : 'Visits'} Recorded
+                        </span>
+                      )}
+                    </div>
+
+                    {getPatientHistoryPrescriptions().length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (expandedRxHistoryIds.size === getPatientHistoryPrescriptions().length) {
+                            setExpandedRxHistoryIds(new Set());
+                          } else {
+                            setExpandedRxHistoryIds(new Set(getPatientHistoryPrescriptions().map(r => r.id)));
+                          }
+                        }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}
+                      >
+                        {expandedRxHistoryIds.size === getPatientHistoryPrescriptions().length ? 'Collapse All ▲' : 'Expand All ▼'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Accordion Cards List */}
+                  {getPatientHistoryPrescriptions().length === 0 ? (
+                    <div style={{ padding: '1.5rem', backgroundColor: '#ffffff', borderRadius: '10px', border: '1px dashed #cbd5e1', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>
+                      <span style={{ fontSize: '1.8rem', display: 'block', marginBottom: '0.5rem' }}>📋</span>
+                      <strong>No past prescription records found for {offlineForm.patientName ? `"${offlineForm.patientName}"` : 'this patient'}.</strong>
+                      <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
+                        When you create and save prescriptions for this patient, all earlier consultations will automatically appear here as collapsible history cards.
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {getPatientHistoryPrescriptions().map((histRx, idx) => {
+                        const isExpanded = expandedRxHistoryIds.has(histRx.id);
+                        const isCurrentActive = selectedOfflineRxId === histRx.id;
+                        const histMeds = typeof histRx.medications === 'string' ? JSON.parse(histRx.medications) : (histRx.medications || []);
+                        const consultDateFormatted = formatPrintDate(histRx.consultDate || histRx.createdAt);
+
+                        return (
+                          <div key={histRx.id} className="rx-history-card">
+                            
+                            {/* Accordion Header Row (Matching user drawing: previous date | refrence no | ^) */}
+                            <div 
+                              className={`rx-history-header ${isExpanded ? 'active' : ''}`}
+                              onClick={() => toggleRxHistoryAccordion(histRx.id)}
+                            >
+                              {/* Left: Previous Date */}
+                              <div className="rx-history-date">
+                                <span>📅</span>
+                                <span>{consultDateFormatted}</span>
+                                {isCurrentActive && (
+                                  <span className="badge badge-info" style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', marginLeft: '0.25rem' }}>
+                                    Active in Editor
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Center: Reference Number */}
+                              <div className="rx-history-ref">
+                                {histRx.referenceId ? `Ref: ${histRx.referenceId}` : `Ref: OFF-RX-${histRx.id.slice(0, 6).toUpperCase()}`}
+                              </div>
+
+                              {/* Right: Expand/Collapse Arrow */}
+                              <div className="rx-history-arrow-btn">
+                                <span style={{ transform: isExpanded ? 'rotate(0deg)' : 'rotate(180deg)', display: 'inline-block', transition: 'transform 0.2s ease' }}>
+                                  ▲
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Accordion Body: Details & Interactive Actions */}
+                            {isExpanded && (
+                              <div className="rx-history-body">
+                                
+                                {/* Header Action Toolbar */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                  <div style={{ fontSize: '0.85rem', color: '#1e293b' }}>
+                                    <strong>{histRx.patientName}</strong> ({histRx.patientAge} Yrs / {histRx.patientGender}) {histRx.patientPhone ? `• 📞 ${histRx.patientPhone}` : ''}
+                                  </div>
+
+                                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    {histMeds.length > 0 && (
+                                      <button 
+                                        type="button" 
+                                        onClick={() => copyAllMedsFromHistory(histRx)}
+                                        className="btn btn-primary"
+                                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                                        title="Copy all prescribed medicines from this past visit directly to today's prescription"
+                                      >
+                                        📋 Copy All Meds to Today's Rx
+                                      </button>
+                                    )}
+                                    <button 
+                                      type="button" 
+                                      onClick={() => {
+                                        loadOfflinePrescription(histRx);
+                                      }}
+                                      className="btn btn-secondary"
+                                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                                      title="Open this past prescription in form"
+                                    >
+                                      ✏️ Open in Editor
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Vitals & Clinical Overview */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', backgroundColor: '#ffffff', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.8rem' }}>
+                                  <div><span style={{ color: '#64748b' }}>BP:</span> <strong style={{ color: '#1e293b' }}>{histRx.bp || '—'}</strong></div>
+                                  <div><span style={{ color: '#64748b' }}>Pulse:</span> <strong style={{ color: '#1e293b' }}>{histRx.pulse || '—'}</strong></div>
+                                  <div><span style={{ color: '#64748b' }}>Weight:</span> <strong style={{ color: '#1e293b' }}>{histRx.weight || '—'}</strong></div>
+                                  <div><span style={{ color: '#64748b' }}>Visit Date:</span> <strong style={{ color: '#1e293b' }}>{consultDateFormatted}</strong></div>
+                                </div>
+
+                                {/* Chief Complaints & Diagnosis */}
+                                <div style={{ display: 'grid', gridTemplateColumns: histRx.chiefComplaints ? '1fr 1fr' : '1fr', gap: '0.75rem', fontSize: '0.82rem' }}>
+                                  {histRx.chiefComplaints && (
+                                    <div style={{ backgroundColor: '#ffffff', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                      <div style={{ fontWeight: 800, color: '#3b82f6', fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Chief Complaints</div>
+                                      <div style={{ color: '#1e293b', whiteSpace: 'pre-wrap' }}>{histRx.chiefComplaints}</div>
+                                    </div>
+                                  )}
+                                  <div style={{ backgroundColor: '#ffffff', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                    <div style={{ fontWeight: 800, color: '#0f766e', fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Diagnosis Notes</div>
+                                    <div style={{ color: '#1e293b', whiteSpace: 'pre-wrap' }}>{histRx.diagnosis || 'No clinical diagnosis recorded.'}</div>
+                                  </div>
+                                </div>
+
+                                {/* Prescribed Medications Table */}
+                                <div>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                                    <strong style={{ fontSize: '0.82rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                      <span style={{ color: '#0f766e', fontWeight: 'bold' }}>℞</span> Prescribed Medicines ({histMeds.length})
+                                    </strong>
+                                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Click "+ Add" to import individual medicine</span>
+                                  </div>
+
+                                  {histMeds.length === 0 ? (
+                                    <div style={{ fontStyle: 'italic', fontSize: '0.8rem', color: '#94a3b8', padding: '0.5rem', backgroundColor: '#ffffff', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                      No medicines were prescribed in this visit.
+                                    </div>
+                                  ) : (
+                                    <div style={{ backgroundColor: '#ffffff', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
+                                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                                        <thead>
+                                          <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1.5px solid #cbd5e1', color: '#475569', textAlign: 'left' }}>
+                                            <th style={{ padding: '0.4rem 0.6rem', fontWeight: 800 }}>Medicine & Composition</th>
+                                            <th style={{ padding: '0.4rem 0.6rem', fontWeight: 800 }}>Dosage</th>
+                                            <th style={{ padding: '0.4rem 0.6rem', fontWeight: 800 }}>Instructions</th>
+                                            <th style={{ padding: '0.4rem 0.6rem', fontWeight: 800, textAlign: 'right' }}>Action</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {histMeds.map((m, mIdx) => (
+                                            <tr key={mIdx} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: mIdx % 2 === 1 ? '#fafafa' : '#fff' }}>
+                                              <td style={{ padding: '0.45rem 0.6rem', color: '#1e293b' }}>
+                                                <div style={{ fontWeight: 800 }}>{mIdx + 1}. {m.name}</div>
+                                                {m.composition && m.composition.trim() && (
+                                                  <div style={{ fontSize: '0.75rem', color: '#b91c1c', fontStyle: 'italic', fontWeight: 600, marginTop: '0.1rem' }}>
+                                                    ({m.composition.trim()})
+                                                  </div>
+                                                )}
+                                              </td>
+                                              <td style={{ padding: '0.45rem 0.6rem', color: '#334155' }}>{m.dosage || '—'}</td>
+                                              <td style={{ padding: '0.45rem 0.6rem', color: '#334155' }}>{m.frequency || '—'}</td>
+                                              <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right' }}>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => copySingleMedFromHistory(m)}
+                                                  className="btn btn-secondary"
+                                                  style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', borderRadius: '4px' }}
+                                                  title={`Add ${m.name} to current prescription`}
+                                                >
+                                                  ➕ Add
+                                                </button>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Tests & Advice if available */}
+                                {(histRx.requiredTests || histRx.advice) && (
+                                  <div style={{ display: 'grid', gridTemplateColumns: (histRx.requiredTests && histRx.advice) ? '1fr 1fr' : '1fr', gap: '0.75rem', fontSize: '0.8rem' }}>
+                                    {histRx.requiredTests && (
+                                      <div style={{ backgroundColor: '#fff7ed', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #fed7aa' }}>
+                                        <strong style={{ color: '#ea580c', display: 'block', marginBottom: '0.2rem' }}>Required Tests:</strong>
+                                        <div style={{ color: '#7c2d12', whiteSpace: 'pre-wrap' }}>{histRx.requiredTests}</div>
+                                      </div>
+                                    )}
+                                    {histRx.advice && (
+                                      <div style={{ backgroundColor: '#f0fdfa', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #ccfbf1' }}>
+                                        <strong style={{ color: '#0d9488', display: 'block', marginBottom: '0.2rem' }}>Advice Given:</strong>
+                                        <div style={{ color: '#134e4a', whiteSpace: 'pre-wrap' }}>{histRx.advice}</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                              </div>
+                            )}
+
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
                 </div>
 
               </div>

@@ -590,6 +590,136 @@ input:focus, textarea:focus, select:focus {
   font-weight: 600;
 }
 
+/* =========================================================================
+   Offline Prescription History Accordion & Quick Patient Lookup Styles
+   ========================================================================= */
+
+.rx-history-card {
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  background-color: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rx-history-card:hover {
+  border-color: #0f766e;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.1);
+}
+
+.rx-history-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+  background-color: #ffffff;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.rx-history-header:hover {
+  background-color: #f8fafc;
+}
+
+.rx-history-header.active {
+  background-color: #f0fdfa;
+  border-bottom: 1.5px solid #ccfbf1;
+}
+
+.rx-history-date {
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  letter-spacing: 0.01em;
+}
+
+.rx-history-ref {
+  text-align: center;
+  color: #0f766e;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+.rx-history-arrow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #f1f5f9;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 900;
+  transition: all 0.2s ease;
+}
+
+.rx-history-header.active .rx-history-arrow-btn {
+  background-color: #ccfbf1;
+  color: #0f766e;
+}
+
+.rx-history-body {
+  padding: 1.25rem;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: rxSlideDown 0.2s ease-out;
+}
+
+@keyframes rxSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.quick-lookup-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1.5px solid var(--primary);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  max-height: 360px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 0.5rem;
+}
+
+.quick-lookup-item {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.quick-lookup-item:last-child {
+  border-bottom: none;
+}
+
+.quick-lookup-item:hover {
+  background-color: #f0fdfa;
+  border-color: #ccfbf1;
+}
+
 @media print {
   @page {
     size: portrait;
