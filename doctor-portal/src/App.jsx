@@ -726,35 +726,23 @@ export default function App() {
     }).slice(0, 12);
   };
 
-  // Detect if manually typed reference ID matches an existing patient
+  // Detect if manually typed reference ID matches an existing patient whose details are not yet filled
   const matchedOldPatientRecord = React.useMemo(() => {
     if (!offlineForm.referenceId || !offlineForm.referenceId.trim()) return null;
+    if (selectedOfflineRxId) return null;
     const ref = offlineForm.referenceId.trim().toLowerCase();
     const found = offlineRxList.find(rx => {
       const rxRef = (rx.referenceId || '').trim().toLowerCase();
       const rxSerial = rxRef.split('/')[0];
-      return (rxRef === ref || rxSerial === ref) && (!selectedOfflineRxId || selectedOfflineRxId !== rx.id);
+      return (rxRef === ref || rxSerial === ref);
     });
-    return found || null;
-  }, [offlineForm.referenceId, offlineRxList, selectedOfflineRxId]);
-
-  // Detect if patient name or phone matches an existing patient in database (for lifetime Ref ID)
-  const existingPatientMatch = React.useMemo(() => {
-    if (selectedOfflineRxId) return null;
-    const currentName = (offlineForm.patientName || '').trim().toLowerCase();
-    const currentPhone = (offlineForm.patientPhone || '').trim();
-    if (!currentName && !currentPhone) return null;
-
-    const found = offlineRxList.find(rx => {
-      const rxPhone = (rx.patientPhone || '').trim();
-      const rxName = (rx.patientName || '').trim().toLowerCase();
-      if (currentPhone && rxPhone && rxPhone === currentPhone) return true;
-      if (currentName && rxName && (rxName === currentName || (currentName.length >= 3 && rxName === currentName))) return true;
-      return false;
-    });
-
-    return found || null;
-  }, [offlineForm.patientName, offlineForm.patientPhone, offlineRxList, selectedOfflineRxId]);
+    if (!found) return null;
+    // Don't show if this patient's details are already loaded in the form
+    if (offlineForm.patientName && offlineForm.patientName.trim().toLowerCase() === found.patientName.trim().toLowerCase()) {
+      return null;
+    }
+    return found;
+  }, [offlineForm.referenceId, offlineForm.patientName, offlineRxList, selectedOfflineRxId]);
 
   // Socket.io real-time events listener
   useEffect(() => {
@@ -2044,9 +2032,36 @@ export default function App() {
               
               {/* Form Input Panel */}
               <form onSubmit={saveOfflinePrescription} className="glass-panel no-print" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
-                  {selectedOfflineRxId ? 'Edit Offline Prescription' : 'Create Offline Prescription'}
-                </h3>
+                
+                {/* Header: Edit / View Past Record vs Create New Prescription */}
+                {selectedOfflineRxId ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#e0f2fe', padding: '0.85rem 1.1rem', borderRadius: '8px', border: '1.5px solid #0284c7', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div>
+                      <div style={{ fontWeight: 800, color: '#0369a1', fontSize: '0.92rem' }}>
+                        📁 Viewing Past Prescription (Ref: {offlineForm.referenceId || 'N/A'})
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#0c4a6e', marginTop: '0.1rem' }}>
+                        Patient: <strong>{offlineForm.patientName}</strong> ({offlineForm.patientAge} Yrs / {offlineForm.patientGender}) • Past Date: {formatPrintDate(originalConsultDate || offlineForm.consultDate)}
+                      </div>
+                    </div>
+                    <button 
+                      type="button" 
+                      className="btn btn-primary"
+                      onClick={() => {
+                        const currentRx = offlineRxList.find(r => r.id === selectedOfflineRxId) || { ...offlineForm };
+                        startNewFollowUpFromPatient(currentRx);
+                      }}
+                      style={{ padding: '0.45rem 0.9rem', fontSize: '0.82rem', fontWeight: 700 }}
+                      title="Start a new visit for today using this patient's lifetime reference ID"
+                    >
+                      ⚡ Start Today's Follow-up (Keep Ref {offlineForm.referenceId})
+                    </button>
+                  </div>
+                ) : (
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
+                    {offlineForm.patientName ? `Prescription for ${offlineForm.patientName} (Ref: ${offlineForm.referenceId})` : 'Create Offline Prescription'}
+                  </h3>
+                )}
                 
                 {/* Reference ID & Consultation Date Row */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -2078,7 +2093,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Smart Match Banner for Manual Serial / Ref Entry */}
+                {/* Smart Match Banner only if doctor types an existing serial into a blank form */}
                 {matchedOldPatientRecord && (
                   <div style={{
                     padding: '0.75rem 1rem',
@@ -2093,13 +2108,13 @@ export default function App() {
                     animation: 'rxSlideDown 0.2s ease-out'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong>✨ Found Existing Patient for Ref {matchedOldPatientRecord.referenceId}</strong>
+                      <strong>✨ Found Patient Record for Ref {matchedOldPatientRecord.referenceId}</strong>
                       <span style={{ fontSize: '0.75rem', color: '#78350f', fontWeight: 600 }}>
                         {formatPrintDate(matchedOldPatientRecord.consultDate || matchedOldPatientRecord.createdAt)}
                       </span>
                     </div>
                     <div>
-                      Patient: <strong>{matchedOldPatientRecord.patientName}</strong> ({matchedOldPatientRecord.patientAge} Yrs, {matchedOldPatientRecord.patientGender}) • Lifetime Ref: <strong>{matchedOldPatientRecord.referenceId}</strong>
+                      Patient: <strong>{matchedOldPatientRecord.patientName}</strong> ({matchedOldPatientRecord.patientAge} Yrs, {matchedOldPatientRecord.patientGender})
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
                       <button 
@@ -2108,7 +2123,7 @@ export default function App() {
                         className="btn btn-primary"
                         style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
                       >
-                        ⚡ Start Today's Follow-up (Keep Ref {matchedOldPatientRecord.referenceId})
+                        ⚡ Auto-Fill Details & Start Today's Follow-up (Keep Ref {matchedOldPatientRecord.referenceId})
                       </button>
                       <button 
                         type="button" 
@@ -2119,7 +2134,7 @@ export default function App() {
                         className="btn btn-secondary"
                         style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
                       >
-                        ✏️ Load & Edit This Record
+                        📁 View Past Rx
                       </button>
                     </div>
                   </div>
@@ -2147,44 +2162,6 @@ export default function App() {
                     />
                   </div>
                 </div>
-
-                {/* Recognized Old Patient Badge when typing Name or Phone */}
-                {existingPatientMatch && offlineForm.referenceId !== existingPatientMatch.referenceId && (
-                  <div style={{
-                    padding: '0.65rem 0.9rem',
-                    backgroundColor: '#f0fdfa',
-                    border: '1.5px solid #0f766e',
-                    borderRadius: '8px',
-                    fontSize: '0.82rem',
-                    color: '#0f766e',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    animation: 'rxSlideDown 0.2s ease-out'
-                  }}>
-                    <div>
-                      <span>✨ <strong>Old Patient Recognized:</strong> {existingPatientMatch.patientName} (Lifetime Ref: <strong>{existingPatientMatch.referenceId}</strong>)</span>
-                    </div>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setOfflineForm(prev => ({
-                          ...prev,
-                          referenceId: existingPatientMatch.referenceId,
-                          patientName: existingPatientMatch.patientName,
-                          patientAge: existingPatientMatch.patientAge,
-                          patientGender: existingPatientMatch.patientGender,
-                          patientPhone: existingPatientMatch.patientPhone || prev.patientPhone
-                        }));
-                      }}
-                      className="btn btn-primary"
-                      style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
-                    >
-                      Apply Lifetime Ref ({existingPatientMatch.referenceId})
-                    </button>
-                  </div>
-                )}
 
                 {/* Patient Information Row 2: Age & Gender */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
