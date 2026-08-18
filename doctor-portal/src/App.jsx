@@ -312,8 +312,8 @@ export default function App() {
     }
   };
 
-  // Fetch next reference ID from API
-  const fetchNextReferenceId = async () => {
+  // Fetch next reference ID from API (only for brand new patients or when forced)
+  const fetchNextReferenceId = async (force = false) => {
     if (!token) return;
     try {
       const response = await fetch(`${API_BASE_URL}/doctor/offline-prescriptions/next-reference`, {
@@ -323,7 +323,13 @@ export default function App() {
       });
       const data = await response.json();
       if (data.success) {
-        setOfflineForm(prev => ({ ...prev, referenceId: data.nextReferenceId }));
+        setOfflineForm(prev => {
+          // If we already have a reference ID and this is not a forced reset for a brand new patient, KEEP IT!
+          if (!force && prev.referenceId && prev.referenceId.trim()) {
+            return prev;
+          }
+          return { ...prev, referenceId: data.nextReferenceId };
+        });
       }
     } catch (err) {
       console.error('Failed to fetch next reference ID:', err);
@@ -588,6 +594,7 @@ export default function App() {
       rowSpacing: 12,
       useLetterhead: localStorage.getItem('useLetterheadOffline') === 'true'
     });
+    fetchNextReferenceId(true);
   };
 
   // Medication handlers for offline prescription form
@@ -780,10 +787,11 @@ export default function App() {
   }, [token]);
 
   useEffect(() => {
-    if (dashboardView === 'offline-rx' && !selectedOfflineRxId) {
-      fetchNextReferenceId();
+    // Only auto-fetch if we are in offline-rx mode, no existing Rx is loaded, and NO referenceId has been set yet!
+    if (dashboardView === 'offline-rx' && !selectedOfflineRxId && !offlineForm.referenceId) {
+      fetchNextReferenceId(false);
     }
-  }, [dashboardView, selectedOfflineRxId, token]);
+  }, [dashboardView, token]);
 
   // Video calling media stream handlers & triggers
   const startMedia = async () => {
