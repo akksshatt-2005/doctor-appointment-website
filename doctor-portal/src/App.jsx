@@ -1709,7 +1709,7 @@ export default function App() {
                                 style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
                                 title="Start a fresh follow-up visit for this patient with new Serial Ref ID"
                               >
-                                ⚡ Start Today's Visit
+                                ⚡ Start Today's Follow-up
                               </button>
                               <button 
                                 type="button" 
@@ -2060,9 +2060,9 @@ export default function App() {
                         startNewFollowUpFromPatient(currentRx);
                       }}
                       style={{ padding: '0.45rem 0.9rem', fontSize: '0.82rem', fontWeight: 700 }}
-                      title="Start a new visit for today using this patient's lifetime reference ID"
+                      title="Start today's follow-up visit using this patient's lifetime reference ID"
                     >
-                      ⚡ Start Today's Follow-up (Keep Ref {offlineForm.referenceId})
+                      ⚡ Start Today's Follow-up
                     </button>
                   </div>
                 ) : (
@@ -2131,7 +2131,7 @@ export default function App() {
                         className="btn btn-primary"
                         style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
                       >
-                        ⚡ Auto-Fill Details & Start Today's Follow-up (Keep Ref {matchedOldPatientRecord.referenceId})
+                        ⚡ Start Today's Follow-up
                       </button>
                       <button 
                         type="button" 
