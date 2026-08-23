@@ -143,6 +143,8 @@ export default function App() {
   const [editingMedName, setEditingMedName] = useState('');
   const [editingMedComposition, setEditingMedComposition] = useState('');
   const [editingMedDosage, setEditingMedDosage] = useState('');
+  const [editingOfflineMedIndex, setEditingOfflineMedIndex] = useState(null);
+  const [editingOfflineMed, setEditingOfflineMed] = useState({ name: '', composition: '', dosage: '', frequency: '' });
   const [showLayoutSettings, setShowLayoutSettings] = useState(false);
   const [fontSearchQuery, setFontSearchQuery] = useState('');
   const [showFontDropdown, setShowFontDropdown] = useState(false);
@@ -554,6 +556,8 @@ export default function App() {
       requiredTests: rx.requiredTests || '',
       followUpDate: rx.followUpDate ? rx.followUpDate.split('T')[0] : ''
     });
+    setEditingOfflineMedIndex(null);
+    setEditingOfflineMed({ name: '', composition: '', dosage: '', frequency: '' });
     setOfflineLayout({
       pageWidth: rx.pageWidth || 800,
       pageHeight: rx.pageHeight || 1120,
@@ -568,6 +572,8 @@ export default function App() {
   const resetOfflineForm = () => {
     setSelectedOfflineRxId(null);
     setOriginalConsultDate('');
+    setEditingOfflineMedIndex(null);
+    setEditingOfflineMed({ name: '', composition: '', dosage: '', frequency: '' });
     setOfflineForm({
       referenceId: '',
       patientName: '',
@@ -606,6 +612,10 @@ export default function App() {
   };
 
   const removeOfflineMedicationRow = (index) => {
+    if (editingOfflineMedIndex === index) {
+      setEditingOfflineMedIndex(null);
+      setEditingOfflineMed({ name: '', composition: '', dosage: '', frequency: '' });
+    }
     setOfflineForm(prev => ({
       ...prev,
       medications: (prev.medications || []).filter((_, i) => i !== index)
@@ -619,6 +629,40 @@ export default function App() {
       ...prev,
       medications: updatedMeds
     }));
+  };
+
+  // Start editing an added medicine
+  const startEditOfflineMed = (index) => {
+    const target = offlineForm.medications[index];
+    if (!target) return;
+    setEditingOfflineMedIndex(index);
+    setEditingOfflineMed({
+      name: target.name || '',
+      composition: target.composition || '',
+      dosage: target.dosage || '',
+      frequency: target.frequency || ''
+    });
+  };
+
+  // Save changes to an edited medicine
+  const saveEditOfflineMed = (index) => {
+    if (!editingOfflineMed.name.trim()) {
+      alert('Please provide a valid Medicine Name.');
+      return;
+    }
+    setOfflineForm(prev => {
+      const updated = [...(prev.medications || [])];
+      updated[index] = { ...editingOfflineMed };
+      return { ...prev, medications: updated };
+    });
+    setEditingOfflineMedIndex(null);
+    setEditingOfflineMed({ name: '', composition: '', dosage: '', frequency: '' });
+  };
+
+  // Cancel editing an added medicine
+  const cancelEditOfflineMed = () => {
+    setEditingOfflineMedIndex(null);
+    setEditingOfflineMed({ name: '', composition: '', dosage: '', frequency: '' });
   };
 
   // Toggle accordion card in previous prescriptions history
@@ -2629,52 +2673,189 @@ export default function App() {
                   {/* Display List of Added Medicines under the entry box */}
                   {offlineForm.medications.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
-                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Added Medicines ({offlineForm.medications.length})</label>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                        {offlineForm.medications.map((med, index) => (
-                          <div 
-                            key={index}
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              padding: '0.5rem 0.75rem',
-                              backgroundColor: 'var(--neutral-light)',
-                              border: '1px solid var(--neutral-border)',
-                              borderRadius: '6px',
-                              fontSize: '0.8rem'
-                            }}
-                          >
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontWeight: 700, color: 'var(--neutral-dark)' }}>
-                                {index + 1}. {med.name}
-                              </span>
-                              {(med.composition || med.dosage || med.frequency) && (
-                                <span style={{ fontSize: '0.75rem', color: 'var(--neutral-body)', marginTop: '0.1rem' }}>
-                                  {med.composition ? `(${med.composition})` : ''} 
-                                  {med.dosage ? ` • ${med.dosage}` : ''} 
-                                  {med.frequency ? ` • ${med.frequency}` : ''}
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeOfflineMedicationRow(index)}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>
+                          Added Medicines ({offlineForm.medications.length})
+                        </label>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--neutral-body)' }}>
+                          Click ✏️ Edit to modify any medicine
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {offlineForm.medications.map((med, index) => {
+                          const isEditingThis = editingOfflineMedIndex === index;
+
+                          if (isEditingThis) {
+                            return (
+                              <div 
+                                key={index}
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '0.6rem',
+                                  padding: '0.85rem',
+                                  backgroundColor: '#f0fdfa',
+                                  border: '2px solid var(--primary)',
+                                  borderRadius: '8px',
+                                  boxShadow: '0 2px 8px rgba(15, 118, 110, 0.15)',
+                                  animation: 'rxSlideDown 0.15s ease-out'
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ccfbf1', paddingBottom: '0.4rem' }}>
+                                  <span style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                    <span>✏️</span> Editing Medicine #{index + 1}
+                                  </span>
+                                  <span style={{ fontSize: '0.72rem', color: '#0f766e', fontStyle: 'italic' }}>
+                                    Update details below and click Save
+                                  </span>
+                                </div>
+
+                                {/* Name & Composition inputs */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Medicine Name *</label>
+                                    <input 
+                                      type="text" 
+                                      placeholder="Medicine Name"
+                                      value={editingOfflineMed.name}
+                                      onChange={e => setEditingOfflineMed(prev => ({ ...prev, name: e.target.value }))}
+                                      style={{ width: '100%', padding: '0.4rem 0.55rem', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--neutral-border)', boxSizing: 'border-box' }}
+                                      required
+                                      autoFocus
+                                    />
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Composition (Optional)</label>
+                                    <input 
+                                      type="text" 
+                                      placeholder="Generic Composition"
+                                      value={editingOfflineMed.composition}
+                                      onChange={e => setEditingOfflineMed(prev => ({ ...prev, composition: e.target.value }))}
+                                      style={{ width: '100%', padding: '0.4rem 0.55rem', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--neutral-border)', boxSizing: 'border-box' }}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Dosage & Frequency inputs */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Dosage (Optional)</label>
+                                    <input 
+                                      type="text" 
+                                      placeholder="e.g. 1 Tablet"
+                                      value={editingOfflineMed.dosage}
+                                      onChange={e => setEditingOfflineMed(prev => ({ ...prev, dosage: e.target.value }))}
+                                      style={{ width: '100%', padding: '0.4rem 0.55rem', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--neutral-border)', boxSizing: 'border-box' }}
+                                    />
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>Frequency & Instructions</label>
+                                    <input 
+                                      type="text" 
+                                      placeholder="e.g. 1-0-1 (after meals)"
+                                      value={editingOfflineMed.frequency}
+                                      onChange={e => setEditingOfflineMed(prev => ({ ...prev, frequency: e.target.value }))}
+                                      style={{ width: '100%', padding: '0.4rem 0.55rem', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--neutral-border)', boxSizing: 'border-box' }}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Save / Cancel Action Buttons */}
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.25rem' }}>
+                                  <button
+                                    type="button"
+                                    onClick={cancelEditOfflineMed}
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem' }}
+                                  >
+                                    ✕ Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => saveEditOfflineMed(index)}
+                                    className="btn btn-primary"
+                                    style={{ padding: '0.35rem 0.9rem', fontSize: '0.78rem', fontWeight: 700 }}
+                                  >
+                                    ✓ Save Changes
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div 
+                              key={index}
                               style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--danger)',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                padding: '0.2rem 0.4rem',
-                                fontSize: '0.9rem'
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '0.6rem 0.85rem',
+                                backgroundColor: 'var(--neutral-light)',
+                                border: '1px solid var(--neutral-border)',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                transition: 'all 0.15s ease'
                               }}
-                              title="Remove from Prescription"
                             >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
+                              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingRight: '0.5rem' }}>
+                                <span style={{ fontWeight: 800, color: 'var(--neutral-dark)', fontSize: '0.88rem' }}>
+                                  {index + 1}. {med.name}
+                                </span>
+                                {(med.composition || med.dosage || med.frequency) && (
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--neutral-body)', marginTop: '0.15rem' }}>
+                                    {med.composition ? (
+                                      <span style={{ color: '#b91c1c', fontStyle: 'italic', fontWeight: 600 }}>({med.composition})</span>
+                                    ) : null}
+                                    {med.dosage ? ` • ${med.dosage}` : ''} 
+                                    {med.frequency ? ` • ${med.frequency}` : ''}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => startEditOfflineMed(index)}
+                                  style={{
+                                    background: '#0f766e',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    padding: '0.3rem 0.65rem',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                  }}
+                                  title="Edit this medicine's name, composition, dosage, or frequency"
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeOfflineMedicationRow(index)}
+                                  style={{
+                                    background: '#fff',
+                                    border: '1px solid #fca5a5',
+                                    color: 'var(--danger)',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    padding: '0.25rem 0.5rem',
+                                    fontSize: '0.8rem'
+                                  }}
+                                  title="Remove from Prescription"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
