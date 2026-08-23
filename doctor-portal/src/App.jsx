@@ -799,18 +799,25 @@ export default function App() {
     return Array.from(familyMap.values());
   }, [offlineForm.patientPhone, offlineForm.patientName, offlineRxList]);
 
-  // Copy all medications from past prescription into current form
+  // Copy all medications and clinical diagnosis from past prescription into current form
   const copyAllMedsFromHistory = (rx) => {
     const meds = typeof rx.medications === 'string' ? JSON.parse(rx.medications) : (rx.medications || []);
-    if (!meds || meds.length === 0) {
-      alert('This past prescription does not contain any medications to copy.');
+    if ((!meds || meds.length === 0) && !rx.diagnosis) {
+      alert('This past prescription does not contain any medications or diagnosis to copy.');
       return;
     }
     setOfflineForm(prev => ({
       ...prev,
-      medications: [...(prev.medications || []), ...meds]
+      medications: meds && meds.length > 0 ? [...(prev.medications || []), ...meds] : (prev.medications || []),
+      // Copy clinical diagnosis from past visit
+      diagnosis: rx.diagnosis || prev.diagnosis || '',
+      // Vitals (BP, Pulse, Weight) remain untouched and fresh for today's consultation
+      bp: prev.bp || '',
+      pulse: prev.pulse || '',
+      weight: prev.weight || ''
     }));
-    alert(`Copied ${meds.length} medicine(s) into current prescription!`);
+    const diagMsg = rx.diagnosis ? ` and Diagnosis ("${rx.diagnosis}")` : '';
+    alert(`Copied ${meds ? meds.length : 0} medicine(s)${diagMsg} into today's prescription! (BP, pulse, weight left fresh)`);
   };
 
   // Copy single medication from past prescription into current form
@@ -834,11 +841,11 @@ export default function App() {
       patientGender: rx.patientGender,
       patientPhone: rx.patientPhone || '',
       consultDate: getLocalDateStr(),
-      diagnosis: '',
+      diagnosis: rx.diagnosis || '', // Copy clinical diagnosis for follow-up
       chiefComplaints: '',
-      bp: '',
-      pulse: '',
-      weight: rx.weight || '',
+      bp: '', // Fresh for today (do not copy past vitals)
+      pulse: '', // Fresh for today (do not copy past vitals)
+      weight: '', // Fresh for today (do not copy past vitals)
       medications: [],
       advice: '',
       requiredTests: '',
@@ -1444,13 +1451,14 @@ export default function App() {
                                         onClick={() => {
                                           setPrescriptionForm(prev => ({
                                             ...prev,
-                                            medications: [...(prev.medications || []), ...pMeds]
+                                            medications: [...(prev.medications || []), ...pMeds],
+                                            diagnosis: prx.diagnosis || prev.diagnosis || ''
                                           }));
                                           setActiveTab('presc');
                                         }}
                                         style={{ background: '#0f766e', border: 'none', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer' }}
                                       >
-                                        📋 Copy Meds to Digital Rx
+                                        📋 Copy Meds & Diagnosis to Digital Rx
                                       </button>
                                     </div>
                                   )}
