@@ -1039,7 +1039,14 @@ export default function App() {
         
         {/* Header */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', backgroundColor: '#0f172a', borderBottom: '1px solid #1e293b' }}>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#fff' }}>Telehealth Session: {activeVideoAppt.bookingId}</h2>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#fff' }}>Telehealth Session: {activeVideoAppt.bookingId}</h2>
+            {activeVideoAppt.patientName && (
+              <div style={{ fontSize: '0.82rem', color: '#2dd4bf', fontWeight: 600, marginTop: '0.15rem' }}>
+                👤 Patient: {activeVideoAppt.patientName} {activeVideoAppt.patientAge ? `(${activeVideoAppt.patientAge} Yrs)` : ''}
+              </div>
+            )}
+          </div>
           <span className="badge badge-info" style={{ backgroundColor: '#2dd4bf', color: '#0f172a' }}>Connected</span>
         </header>
 
@@ -1096,9 +1103,9 @@ export default function App() {
                 
                 {generatedPdfUrl && (
                   <div style={{ backgroundColor: 'rgba(45, 212, 191, 0.1)', border: '1px solid #2dd4bf', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', textAlign: 'center' }}>
-                    <p style={{ color: '#2dd4bf', fontSize: '0.85rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>📄 Prescription Generated</p>
+                    <p style={{ color: '#2dd4bf', fontSize: '0.85rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>📄 Prescription Generated for {activeVideoAppt.patientName}</p>
                     <a href={generatedPdfUrl.startsWith('http') ? generatedPdfUrl : `${API_URL}${generatedPdfUrl}`} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', background: '#2dd4bf', color: '#0f172a', textDecoration: 'none', border: 'none', display: 'inline-block', fontWeight: 700 }}>
-                      Download Prescription PDF
+                      Download {activeVideoAppt.patientName}'s Prescription PDF
                     </a>
                   </div>
                 )}
@@ -1572,10 +1579,20 @@ export default function App() {
                           <div key={appt.id} style={{ backgroundColor: 'var(--white)', border: '1px solid var(--neutral-border)', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', boxShadow: 'var(--shadow-sm)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div>
-                                <span className={`badge ${appt.status === 'SCHEDULED' ? 'badge-success' : appt.status === 'PENDING_PAYMENT' ? 'badge-warning' : 'badge-info'}`}>
-                                  {appt.status}
-                                </span>
-                                <h4 style={{ margin: '0.35rem 0 0 0', fontSize: '1.1rem' }}>Online Video Consultation</h4>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  <span className={`badge ${appt.status === 'SCHEDULED' ? 'badge-success' : appt.status === 'PENDING_PAYMENT' ? 'badge-warning' : 'badge-info'}`}>
+                                    {appt.status}
+                                  </span>
+                                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', backgroundColor: 'var(--primary-light)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                                    ID: {appt.bookingId}
+                                  </span>
+                                </div>
+                                <h4 style={{ margin: '0.35rem 0 0.15rem 0', fontSize: '1.1rem', color: 'var(--neutral-dark)' }}>Online Video Consultation</h4>
+                                {appt.patientName && (
+                                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f766e', marginTop: '0.2rem' }}>
+                                    👤 Patient: {appt.patientName} {appt.patientAge ? `(${appt.patientAge} Yrs)` : ''}
+                                  </div>
+                                )}
                               </div>
                               <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontWeight: 700, color: 'var(--primary)' }}>{appt.slotTime}</div>
@@ -1584,7 +1601,7 @@ export default function App() {
                             </div>
 
                             <div style={{ fontSize: '0.85rem', backgroundColor: 'var(--neutral-light)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
-                              <strong>Purpose:</strong> {appt.symptoms}
+                              <strong>Purpose / Symptoms:</strong> {appt.symptoms}
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '0.75rem' }}>

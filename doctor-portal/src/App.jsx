@@ -634,29 +634,89 @@ export default function App() {
     });
   };
 
+  // Helper to compare two patient names with honorific stripping and individual identity preservation
+  const isSamePatientName = (nameA, nameB) => {
+    if (!nameA || !nameB) return false;
+
+    const clean = (str) =>
+      str
+        .toLowerCase()
+        .trim()
+        .replace(/^(mr|mrs|ms|miss|dr|prof|master|baby|smt|shri)\.?\s+/i, '')
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const a = clean(nameA);
+    const b = clean(nameB);
+
+    if (!a || !b) return false;
+    if (a === b) return true;
+
+    const wordsA = a.split(' ');
+    const wordsB = b.split(' ');
+
+    // If first names differ (e.g. "Ramesh" vs "Sunita"), they are DEFINITELY DIFFERENT people
+    // even if they share the exact same mobile number and family surname!
+    if (wordsA[0] !== wordsB[0]) {
+      return false;
+    }
+
+    // If one is just first name ("Sunita") and other is full name ("Sunita Sharma")
+    if (wordsA.length === 1 || wordsB.length === 1) {
+      return true;
+    }
+
+    // If both are multi-word, check if last names match or if one name contains the other
+    if (wordsA[wordsA.length - 1] === wordsB[wordsB.length - 1]) {
+      return true;
+    }
+
+    if (a.includes(b) || b.includes(a)) {
+      return true;
+    }
+
+    return false;
+  };
+
   // Get all previous prescriptions matching currently entered patient / reference
   const getPatientHistoryPrescriptions = () => {
-    const currentName = (offlineForm.patientName || '').trim().toLowerCase();
+    const currentName = (offlineForm.patientName || '').trim();
     const currentPhone = (offlineForm.patientPhone || '').trim();
-    const currentRef = (offlineForm.referenceId || '').trim().toLowerCase();
+    const currentRef = (offlineForm.referenceId || '').trim();
 
-    if (!currentName && !currentPhone && !currentRef) {
+    if (!currentName && !currentRef) {
       return [];
     }
 
     const matched = offlineRxList.filter(rx => {
+      const rxName = (rx.patientName || '').trim();
       const rxPhone = (rx.patientPhone || '').trim();
-      if (currentPhone && rxPhone && rxPhone === currentPhone) {
+      const rxRef = (rx.referenceId || '').trim();
+
+      // 1. If patient name is entered:
+      if (currentName) {
+        // Name MUST match! If names differ (e.g. Ramesh vs Sunita), they must NEVER be merged,
+        // even if they share the exact same mobile number.
+        if (!isSamePatientName(currentName, rxName)) {
+          return false;
+        }
+
+        // If phone is provided in both, verify phone matches (or one is empty)
+        if (currentPhone && rxPhone && currentPhone !== rxPhone) {
+          return false;
+        }
+
         return true;
       }
-      const rxName = (rx.patientName || '').trim().toLowerCase();
-      if (currentName && rxName && (rxName === currentName || rxName.includes(currentName) || currentName.includes(rxName))) {
-        return true;
+
+      // 2. If no name is entered yet, but a specific reference ID is entered:
+      if (currentRef && rxRef) {
+        const currentSerial = currentRef.split('/')[0].toLowerCase();
+        const rxSerial = rxRef.split('/')[0].toLowerCase();
+        return currentRef.toLowerCase() === rxRef.toLowerCase() || currentSerial === rxSerial;
       }
-      const rxRef = (rx.referenceId || '').trim().toLowerCase();
-      if (currentRef && rxRef && rxRef === currentRef) {
-        return true;
-      }
+
       return false;
     });
 
@@ -668,6 +728,32 @@ export default function App() {
 
     return matched;
   };
+
+  // Identify other family members who share the same mobile phone number but are distinct patients
+  const otherFamilyMembersWithSamePhone = React.useMemo(() => {
+    const currentPhone = (offlineForm.patientPhone || '').trim();
+    const currentName = (offlineForm.patientName || '').trim();
+    if (!currentPhone || !currentName) return [];
+
+    const familyMap = new Map();
+    offlineRxList.forEach(rx => {
+      const rxPhone = (rx.patientPhone || '').trim();
+      const rxName = (rx.patientName || '').trim();
+      if (rxPhone && rxPhone === currentPhone && rxName && !isSamePatientName(currentName, rxName)) {
+        const key = rxName.toLowerCase();
+        if (!familyMap.has(key)) {
+          familyMap.set(key, {
+            name: rxName,
+            age: rx.patientAge,
+            gender: rx.patientGender,
+            referenceId: rx.referenceId,
+            latestRx: rx
+          });
+        }
+      }
+    });
+    return Array.from(familyMap.values());
+  }, [offlineForm.patientPhone, offlineForm.patientName, offlineRxList]);
 
   // Copy all medications from past prescription into current form
   const copyAllMedsFromHistory = (rx) => {
@@ -745,7 +831,7 @@ export default function App() {
     });
     if (!found) return null;
     // Don't show if this patient's details are already loaded in the form
-    if (offlineForm.patientName && offlineForm.patientName.trim().toLowerCase() === found.patientName.trim().toLowerCase()) {
+    if (offlineForm.patientName && isSamePatientName(offlineForm.patientName, found.patientName)) {
       return null;
     }
     return found;
@@ -1267,6 +1353,70 @@ export default function App() {
                     ) : (
                       <p style={{ color: '#94a3b8' }}>No records uploaded.</p>
                     )}
+                  </div>
+
+                  {/* Past Prescriptions History for this individual patient */}
+                  <div className="case-details-section">
+                    <h4>Past Prescriptions & History</h4>
+                    {(() => {
+                      const patientPastRx = offlineRxList.filter(rx => 
+                        isSamePatientName(activeVideoAppt.patientName, rx.patientName)
+                      );
+                      const otherFamily = offlineRxList.filter(rx => 
+                        rx.patientPhone && rx.patientPhone === activeVideoAppt.patientPhone && 
+                        !isSamePatientName(activeVideoAppt.patientName, rx.patientName)
+                      );
+                      const otherNames = Array.from(new Set(otherFamily.map(r => r.patientName)));
+
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                          {otherNames.length > 0 && (
+                            <div style={{ backgroundColor: '#064e3b', border: '1px solid #059669', borderRadius: '6px', padding: '0.4rem 0.6rem', fontSize: '0.75rem', color: '#a7f3d0' }}>
+                              👨‍👩‍👧 <strong>Shared Family Phone (+91 {activeVideoAppt.patientPhone}):</strong> Other registered member(s): {otherNames.join(', ')}. <em>(Clinical records strictly separated)</em>
+                            </div>
+                          )}
+
+                          {patientPastRx.length === 0 ? (
+                            <p style={{ color: '#94a3b8', fontSize: '0.8rem', fontStyle: 'italic', margin: 0 }}>
+                              No earlier prescriptions on file for {activeVideoAppt.patientName}.
+                            </p>
+                          ) : (
+                            patientPastRx.map(prx => {
+                              const pMeds = typeof prx.medications === 'string' ? JSON.parse(prx.medications) : (prx.medications || []);
+                              return (
+                                <div key={prx.id} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '0.6rem', fontSize: '0.8rem' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                                    <strong style={{ color: '#2dd4bf' }}>{formatPrintDate(prx.consultDate || prx.createdAt)}</strong>
+                                    {prx.referenceId && <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Ref: {prx.referenceId}</span>}
+                                  </div>
+                                  <div style={{ color: '#cbd5e1', fontSize: '0.78rem', marginBottom: '0.4rem' }}>
+                                    <strong>Diagnosis:</strong> {prx.diagnosis}
+                                  </div>
+                                  {pMeds.length > 0 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>{pMeds.length} medicine(s)</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPrescriptionForm(prev => ({
+                                            ...prev,
+                                            medications: [...(prev.medications || []), ...pMeds]
+                                          }));
+                                          setActiveTab('presc');
+                                        }}
+                                        style={{ background: '#0f766e', border: 'none', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer' }}
+                                      >
+                                        📋 Copy Meds to Digital Rx
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
@@ -3211,6 +3361,69 @@ export default function App() {
                       </button>
                     )}
                   </div>
+
+                  {/* Shared Family Mobile Awareness Banner */}
+                  {otherFamilyMembersWithSamePhone.length > 0 && (
+                    <div style={{
+                      backgroundColor: '#f0fdf4',
+                      border: '1.5px solid #86efac',
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.9rem',
+                      fontSize: '0.82rem',
+                      color: '#166534',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '0.6rem',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>👨‍👩‍👧</span>
+                        <div>
+                          <div>
+                            <strong>Shared Family Phone ({offlineForm.patientPhone}):</strong> {otherFamilyMembersWithSamePhone.length} other registered family {otherFamilyMembersWithSamePhone.length === 1 ? 'member' : 'members'}:{' '}
+                            {otherFamilyMembersWithSamePhone.map((fm, idx) => (
+                              <span key={fm.name} style={{ fontWeight: 700 }}>
+                                {fm.name} ({fm.age} Yrs / {fm.gender}){idx < otherFamilyMembersWithSamePhone.length - 1 ? ', ' : ''}
+                              </span>
+                            ))}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#15803d', fontStyle: 'italic', marginTop: '0.1rem' }}>
+                            ✓ Prescriptions & past medical history are kept strictly separated for each individual.
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {otherFamilyMembersWithSamePhone.map(fm => (
+                          <button
+                            key={fm.name}
+                            type="button"
+                            onClick={() => {
+                              loadOfflinePrescription(fm.latestRx);
+                              setExpandedRxHistoryIds(new Set([fm.latestRx.id]));
+                            }}
+                            style={{
+                              backgroundColor: '#dcfce7',
+                              border: '1px solid #4ade80',
+                              color: '#15803d',
+                              padding: '0.3rem 0.65rem',
+                              borderRadius: '6px',
+                              fontSize: '0.76rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}
+                            title={`Switch view to ${fm.name}'s prescription records`}
+                          >
+                            <span>👤</span> Switch to {fm.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Accordion Cards List */}
                   {getPatientHistoryPrescriptions().length === 0 ? (
