@@ -18,3 +18,8 @@ Thumbs.db
 
 # App uploads
 backend/uploads/
+
+# Personal & resume files
+*Resume*
+*resume*
+generate_resume_pdf.py
