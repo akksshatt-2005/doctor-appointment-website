@@ -13,6 +13,7 @@ import offlinePrescriptionRoutes from './routes/offlinePrescriptionRoutes.js';
 import medicineRoutes from './routes/medicineRoutes.js';
 import path from 'path';
 import { startReminderScheduler } from './services/scheduler.js';
+import { ensureDoctorAvailabilityAndTemplates } from './controllers/slotController.js';
 
 
 
@@ -165,9 +166,11 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   startReminderScheduler();
+  // Ensure 5 PM to 9 PM daily slots are seeded and ready
+  await ensureDoctorAvailabilityAndTemplates();
 });
 
 export { app, server, prisma, io };

@@ -141,5 +141,17 @@ export function startReminderScheduler() {
     }
   });
 
-  console.log('[Scheduler] 1-hour appointment reminder cron initialized.');
+  // Daily Midnight Cron (00:05 AM): Maintain 5 PM to 9 PM slots for the rolling 90 days
+  cron.schedule('5 0 * * *', async () => {
+    console.log('[Scheduler] Running daily slot maintenance for doctor availability...');
+    try {
+      const { ensureDoctorAvailabilityAndTemplates } = await import('../controllers/slotController.js');
+      await ensureDoctorAvailabilityAndTemplates();
+    } catch (err) {
+      console.error('[Scheduler Error] Daily slot maintenance error:', err);
+    }
+  });
+
+  console.log('[Scheduler] 1-hour appointment reminder and daily slot maintenance cron initialized.');
 }
+
