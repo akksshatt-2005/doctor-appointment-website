@@ -149,6 +149,17 @@ export default function App() {
   const [fontSearchQuery, setFontSearchQuery] = useState('');
   const [showFontDropdown, setShowFontDropdown] = useState(false);
 
+  // Clinical Research & Medicine Analytics State
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [analyticsTab, setAnalyticsTab] = useState('overview'); // 'overview' or 'medicine'
+  const [analyticsTimeframe, setAnalyticsTimeframe] = useState('all'); // 'all', '30days', '90days', '1year'
+  const [overviewAnalytics, setOverviewAnalytics] = useState(null);
+  const [searchedMedicine, setSearchedMedicine] = useState('');
+  const [medicineAnalytics, setMedicineAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [medSearchInput, setMedSearchInput] = useState('');
+  const [medSearchSuggestions, setMedSearchSuggestions] = useState([]);
+
   // Socket and Banner state
   const [socketNotification, setSocketNotification] = useState(null);
   const [newBookingsCount, setNewBookingsCount] = useState(0);
@@ -452,6 +463,123 @@ export default function App() {
       alert('Error deleting medicine.');
       console.error(err);
     }
+  };
+
+  // Fetch Overview Analytics
+  const fetchOverviewAnalytics = async (timeframe = analyticsTimeframe) => {
+    if (!token) return;
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/doctor/analytics/overview?timeframe=${timeframe}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOverviewAnalytics(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load overview analytics:', err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  // Fetch Specific Medicine Analytics
+  const fetchMedicineAnalytics = async (medName, timeframe = analyticsTimeframe) => {
+    if (!token || !medName || !medName.trim()) return;
+    setAnalyticsLoading(true);
+    const cleanName = medName.trim();
+    setSearchedMedicine(cleanName);
+    try {
+      const res = await fetch(`${API_BASE_URL}/doctor/analytics/medicine?name=${encodeURIComponent(cleanName)}&timeframe=${timeframe}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMedicineAnalytics(data.data);
+        setAnalyticsTab('medicine');
+      } else {
+        alert(data.message || 'No data found for this medicine.');
+      }
+    } catch (err) {
+      console.error('Failed to load medicine analytics:', err);
+      alert('Error loading medicine analytics.');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  // Export Analytics Data to CSV
+  const exportAnalyticsCSV = () => {
+    if (!overviewAnalytics && !medicineAnalytics) {
+      alert('No analytics data to export.');
+      return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+
+    if (analyticsTab === 'medicine' && medicineAnalytics) {
+      csvContent += `Medicine Research & Analytics Report\r\n`;
+      csvContent += `Generated On,${new Date().toLocaleString()}\r\n`;
+      csvContent += `Searched Medicine,${medicineAnalytics.canonicalName}\r\n`;
+      csvContent += `Composition,${medicineAnalytics.canonicalComposition || 'N/A'}\r\n`;
+      csvContent += `Total Prescriptions,${medicineAnalytics.totalPrescriptions}\r\n`;
+      csvContent += `Unique Patients,${medicineAnalytics.totalPatients}\r\n`;
+      csvContent += `Total Quantity Prescribed (Units),${medicineAnalytics.totalQuantityPrescribed}\r\n`;
+      csvContent += `Avg Quantity Per Prescription,${medicineAnalytics.averageQuantityPerRx}\r\n\r\n`;
+
+      csvContent += `Dosage Distribution\r\nDosage,Patient Count,Percentage\r\n`;
+      (medicineAnalytics.dosageHistogram || []).forEach(d => {
+        csvContent += `"${d.dosage}",${d.count},${d.percentage}%\r\n`;
+      });
+
+      csvContent += `\r\nAge Demographics Histogram\r\nAge Range,Count,Percentage\r\n`;
+      (medicineAnalytics.ageHistogram || []).forEach(a => {
+        csvContent += `"${a.range}",${a.count},${a.percentage}%\r\n`;
+      });
+
+      csvContent += `\r\nTop Diagnoses\r\nDiagnosis,Prescription Count,Percentage\r\n`;
+      (medicineAnalytics.topDiagnoses || []).forEach(diag => {
+        csvContent += `"${diag.diagnosis}",${diag.count},${diag.percentage}%\r\n`;
+      });
+
+      csvContent += `\r\nCo-Prescribed Medications\r\nMedication,Co-occurrence Count,Rate\r\n`;
+      (medicineAnalytics.coPrescriptions || []).forEach(co => {
+        csvContent += `"${co.name}",${co.count},${co.coOccurrenceRate}%\r\n`;
+      });
+    } else if (overviewAnalytics) {
+      csvContent += `Clinic Global Prescription & Clinical Analytics Report\r\n`;
+      csvContent += `Generated On,${new Date().toLocaleString()}\r\n`;
+      csvContent += `Total Prescriptions Analyzed,${overviewAnalytics.totalPrescriptions}\r\n`;
+      csvContent += `Total Unique Patients,${overviewAnalytics.totalUniquePatients}\r\n`;
+      csvContent += `Total Unique Medicines,${overviewAnalytics.totalUniqueMedicines}\r\n\r\n`;
+
+      csvContent += `Top Prescribed Medicines\r\nRank,Medicine Name,Composition,Prescriptions,Total Units,Patients\r\n`;
+      (overviewAnalytics.topMedicines || []).forEach((m, idx) => {
+        csvContent += `${idx + 1},"${m.name}","${m.composition || 'N/A'}",${m.prescriptionCount},${m.totalQuantity},${m.patientCount}\r\n`;
+      });
+
+      csvContent += `\r\nTop Diagnoses Distribution\r\nDiagnosis,Count,Percentage\r\n`;
+      (overviewAnalytics.topDiagnoses || []).forEach(d => {
+        csvContent += `"${d.name}",${d.count},${d.percentage}%\r\n`;
+      });
+
+      csvContent += `\r\nOverall Age Demographics Histogram\r\nAge Range,Count,Percentage\r\n`;
+      (overviewAnalytics.ageHistogram || []).forEach(a => {
+        csvContent += `"${a.range}",${a.count},${a.percentage}%\r\n`;
+      });
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    const fileName = analyticsTab === 'medicine' && medicineAnalytics 
+      ? `medicine_analytics_${medicineAnalytics.canonicalName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.csv`
+      : `clinic_prescription_analytics_${Date.now()}.csv`;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Save/Submit offline prescription
@@ -2947,14 +3075,29 @@ export default function App() {
                 
               {/* Clean Top Action Bar */}
               <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--white)', padding: '0.75rem 1.25rem', borderRadius: '12px', border: '1px solid var(--neutral-border)', boxShadow: 'var(--shadow-sm)' }}>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={() => setShowLayoutSettings(!showLayoutSettings)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}
-                >
-                  ⚙️ {showLayoutSettings ? 'Hide Layout Settings' : 'Layout Settings'}
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={() => setShowLayoutSettings(!showLayoutSettings)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}
+                  >
+                    ⚙️ {showLayoutSettings ? 'Hide Layout Settings' : 'Layout Settings'}
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={() => {
+                      setShowAnalyticsModal(true);
+                      fetchOverviewAnalytics(analyticsTimeframe);
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, background: '#f0fdf4', borderColor: '#86efac', color: '#166534' }}
+                    title="Open Clinical Research, Medicine Quantity & Prescription Analytics"
+                  >
+                    🔬 Research & Analytics
+                  </button>
+                </div>
                 
                 <button 
                   type="button" 
@@ -3928,6 +4071,612 @@ export default function App() {
 
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          CLINICAL RESEARCH & MEDICINE ANALYTICS MODAL
+          ========================================================================= */}
+      {showAnalyticsModal && (
+        <div className="analytics-modal-overlay">
+          <div className="analytics-modal-window">
+            
+            {/* Modal Header */}
+            <div className="analytics-modal-header">
+              <div>
+                <h3>
+                  <span>🔬</span> Clinical Research & Prescription Analytics
+                </h3>
+                <p>Prescription patterns, medicine quantity analysis, dosage & patient demographics</p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {/* Timeframe Selector */}
+                <select
+                  value={analyticsTimeframe}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setAnalyticsTimeframe(val);
+                    if (analyticsTab === 'overview') {
+                      fetchOverviewAnalytics(val);
+                    } else if (searchedMedicine) {
+                      fetchMedicineAnalytics(searchedMedicine, val);
+                    }
+                  }}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    color: '#fff',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: '8px',
+                    padding: '0.4rem 0.75rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="all" style={{ color: '#000' }}>📅 All Time</option>
+                  <option value="30days" style={{ color: '#000' }}>📅 Last 30 Days</option>
+                  <option value="90days" style={{ color: '#000' }}>📅 Last 90 Days</option>
+                  <option value="1year" style={{ color: '#000' }}>📅 Past 1 Year</option>
+                </select>
+
+                {/* Export CSV Button */}
+                <button
+                  type="button"
+                  onClick={exportAnalyticsCSV}
+                  className="btn"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    color: '#fff',
+                    border: '1px solid rgba(255, 255, 255, 0.4)',
+                    padding: '0.4rem 0.85rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}
+                  title="Export clinical data to CSV"
+                >
+                  📥 Export CSV
+                </button>
+
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowAnalyticsModal(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '1.25rem',
+                    cursor: 'pointer',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '4px',
+                    lineHeight: 1
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="analytics-tab-bar">
+              <button
+                type="button"
+                className={`analytics-tab-btn ${analyticsTab === 'overview' ? 'active' : ''}`}
+                onClick={() => {
+                  setAnalyticsTab('overview');
+                  if (!overviewAnalytics) fetchOverviewAnalytics(analyticsTimeframe);
+                }}
+              >
+                📊 Clinic Overview
+              </button>
+
+              <button
+                type="button"
+                className={`analytics-tab-btn ${analyticsTab === 'medicine' ? 'active' : ''}`}
+                onClick={() => setAnalyticsTab('medicine')}
+              >
+                💊 Medicine Deep-Dive & Quantity Analyzer
+              </button>
+            </div>
+
+            {/* Modal Body Content */}
+            <div className="analytics-modal-body">
+              {analyticsLoading ? (
+                <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+                  <div className="rzp-spinner" style={{ margin: '0 auto 1rem auto' }}></div>
+                  <p style={{ color: 'var(--neutral-body)', fontWeight: 600 }}>Analyzing clinical prescriptions...</p>
+                </div>
+              ) : analyticsTab === 'overview' ? (
+                /* =================== TAB 1: CLINIC OVERVIEW =================== */
+                <>
+                  {overviewAnalytics && (
+                    <>
+                      {/* KPI Summary Cards */}
+                      <div className="analytics-kpi-grid">
+                        <div className="analytics-kpi-card teal">
+                          <span className="kpi-label">Total Prescriptions</span>
+                          <span className="kpi-val">{overviewAnalytics.totalPrescriptions}</span>
+                          <span className="kpi-sub">{overviewAnalytics.offlineCount} Clinic • {overviewAnalytics.onlineCount} Telehealth</span>
+                        </div>
+
+                        <div className="analytics-kpi-card blue">
+                          <span className="kpi-label">Unique Patients Treated</span>
+                          <span className="kpi-val">{overviewAnalytics.totalUniquePatients}</span>
+                          <span className="kpi-sub">Across All Consultations</span>
+                        </div>
+
+                        <div className="analytics-kpi-card purple">
+                          <span className="kpi-label">Unique Drugs Prescribed</span>
+                          <span className="kpi-val">{overviewAnalytics.totalUniqueMedicines}</span>
+                          <span className="kpi-sub">Active Formulations in DB</span>
+                        </div>
+
+                        <div className="analytics-kpi-card amber">
+                          <span className="kpi-label">Total Quantity / Doses</span>
+                          <span className="kpi-val">
+                            {(overviewAnalytics.topMedicines || []).reduce((acc, m) => acc + (m.totalQuantity || 0), 0)}
+                          </span>
+                          <span className="kpi-sub">Estimated Tablets / Units</span>
+                        </div>
+                      </div>
+
+                      {/* Two Column Section: Top Medicines & Top Diagnoses */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.25rem' }}>
+                        
+                        {/* Top Medicines Ranking */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>🏆 Top Prescribed Medicines Ranking</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Sorted by prescription volume</span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '380px', overflowY: 'auto' }}>
+                            {(overviewAnalytics.topMedicines || []).map((med, idx) => (
+                              <div key={idx} className="ranked-med-item">
+                                <div className="ranked-med-rank">{idx + 1}</div>
+                                <div className="ranked-med-info">
+                                  <span className="ranked-med-name">{med.name}</span>
+                                  {med.composition && <span className="ranked-med-comp">{med.composition}</span>}
+                                </div>
+                                <div className="ranked-med-stats">
+                                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary)' }}>
+                                    {med.totalQuantity} <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>units</span>
+                                  </span>
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--neutral-body)' }}>
+                                    {med.prescriptionCount} Rx • {med.patientCount} patients
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  onClick={() => fetchMedicineAnalytics(med.name)}
+                                  style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: 600 }}
+                                  title="Analyze this medicine"
+                                >
+                                  🔍 Analyze
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Top Diagnoses Correlation */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>🩺 Clinical Diagnosis Distribution</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Diagnostic prevalence</span>
+                          </div>
+
+                          <div className="histogram-list">
+                            {(overviewAnalytics.topDiagnoses || []).map((diag, idx) => (
+                              <div key={idx} className="histogram-row">
+                                <div className="histogram-row-header">
+                                  <span>{diag.name}</span>
+                                  <span style={{ color: '#0f766e', fontWeight: 700 }}>{diag.count} cases ({diag.percentage}%)</span>
+                                </div>
+                                <div className="histogram-bar-track">
+                                  <div className="histogram-bar-fill blue" style={{ width: `${Math.max(5, diag.percentage)}%` }}></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* Demographics & Trends Grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+                        
+                        {/* Age Demographics Histogram */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>📊 Patient Age Demographics Histogram</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>All patient age bins</span>
+                          </div>
+
+                          <div className="histogram-list">
+                            {(overviewAnalytics.ageHistogram || []).map((ageItem, idx) => (
+                              <div key={idx} className="histogram-row">
+                                <div className="histogram-row-header">
+                                  <span>Age Group {ageItem.range} yrs</span>
+                                  <span>{ageItem.count} patients ({ageItem.percentage}%)</span>
+                                </div>
+                                <div className="histogram-bar-track">
+                                  <div className="histogram-bar-fill purple" style={{ width: `${Math.max(4, ageItem.percentage)}%` }}></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Gender Distribution */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>⚧️ Patient Gender Breakdown</h4>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'space-around', alignItems: 'center', padding: '1rem 0' }}>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#2563eb' }}>
+                                {overviewAnalytics.genderDistribution?.Male || 0}
+                              </div>
+                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>👨 Male</span>
+                            </div>
+
+                            <div style={{ height: '50px', width: '1px', backgroundColor: '#e2e8f0' }}></div>
+
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#db2777' }}>
+                                {overviewAnalytics.genderDistribution?.Female || 0}
+                              </div>
+                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>👩 Female</span>
+                            </div>
+
+                            <div style={{ height: '50px', width: '1px', backgroundColor: '#e2e8f0' }}></div>
+
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0d9488' }}>
+                                {overviewAnalytics.genderDistribution?.Other || 0}
+                              </div>
+                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>🧑 Other</span>
+                            </div>
+                          </div>
+
+                          {/* Monthly Timeline mini overview */}
+                          {overviewAnalytics.monthlyTrends?.length > 0 && (
+                            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>
+                                📈 Monthly Prescription Volume Trend
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', height: '60px', padding: '0 0.5rem' }}>
+                                {overviewAnalytics.monthlyTrends.map((t, idx) => {
+                                  const maxCount = Math.max(...overviewAnalytics.monthlyTrends.map(x => x.count), 1);
+                                  const heightPct = Math.round((t.count / maxCount) * 100);
+                                  return (
+                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                                      <div style={{ width: '100%', height: `${Math.max(10, heightPct)}%`, backgroundColor: '#0f766e', borderRadius: '3px' }} title={`${t.month}: ${t.count} Rx`}></div>
+                                      <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{t.month.split('-')[1]}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                /* =================== TAB 2: MEDICINE DEEP-DIVE & QUANTITY ANALYZER =================== */
+                <>
+                  {/* Medicine Search Box */}
+                  <div className="analytics-panel" style={{ padding: '1rem' }}>
+                    <div className="med-analytics-search-wrap">
+                      <svg className="med-analytics-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                      </svg>
+                      <input
+                        type="text"
+                        className="med-analytics-search-input"
+                        placeholder="Search any medicine name or composition (e.g. Shanla, Crampgen E, Modalix, Vitablast, Sertraline)..."
+                        value={medSearchInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setMedSearchInput(val);
+                          if (val.trim().length >= 2) {
+                            const suggestions = (medicinesList || []).filter(m => 
+                              m.name.toLowerCase().includes(val.toLowerCase()) || 
+                              (m.composition && m.composition.toLowerCase().includes(val.toLowerCase()))
+                            );
+                            setMedSearchSuggestions(suggestions);
+                          } else {
+                            setMedSearchSuggestions([]);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && medSearchInput.trim()) {
+                            fetchMedicineAnalytics(medSearchInput);
+                            setMedSearchSuggestions([]);
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Auto-suggestions Dropdown */}
+                    {medSearchSuggestions.length > 0 && (
+                      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', backgroundColor: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.5rem', maxHeight: '180px', overflowY: 'auto' }}>
+                        {medSearchSuggestions.map((m, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              fetchMedicineAnalytics(m.name);
+                              setMedSearchInput(m.name);
+                              setMedSearchSuggestions([]);
+                            }}
+                            style={{ padding: '0.4rem 0.75rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            className="suggestion-row"
+                          >
+                            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{m.name}</span>
+                            {m.composition && <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{m.composition}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Quick Medicine Recommendation Pills */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Quick Select:</span>
+                      {(overviewAnalytics?.topMedicines || medicinesList.slice(0, 6)).map((m, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            fetchMedicineAnalytics(m.name);
+                            setMedSearchInput(m.name);
+                            setMedSearchSuggestions([]);
+                          }}
+                          style={{
+                            padding: '0.25rem 0.6rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            borderRadius: '20px',
+                            border: '1px solid #cbd5e1',
+                            background: '#f8fafc',
+                            color: 'var(--neutral-dark)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          💊 {m.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Deep Dive Results */}
+                  {medicineAnalytics ? (
+                    <>
+                      {/* Drug Profile Header Banner */}
+                      <div className="analytics-panel" style={{ background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)', borderColor: '#99f6e4' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span style={{ fontSize: '1.5rem' }}>💊</span>
+                              <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: '#0f766e' }}>
+                                {medicineAnalytics.canonicalName}
+                              </h3>
+                            </div>
+                            {medicineAnalytics.canonicalComposition && (
+                              <div style={{ fontSize: '0.85rem', color: '#115e59', fontWeight: 600, marginTop: '0.25rem' }}>
+                                Composition: <strong>{medicineAnalytics.canonicalComposition}</strong>
+                              </div>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f766e' }}>
+                                {medicineAnalytics.totalQuantityPrescribed} <span style={{ fontSize: '0.85rem' }}>Units</span>
+                              </div>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#134e4a' }}>Total Prescribed Quantity</span>
+                            </div>
+
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#2563eb' }}>
+                                {medicineAnalytics.totalPatients} <span style={{ fontSize: '0.85rem' }}>Patients</span>
+                              </div>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e40af' }}>Unique Individuals</span>
+                            </div>
+
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#7c3aed' }}>
+                                {medicineAnalytics.totalPrescriptions} <span style={{ fontSize: '0.85rem' }}>Rx</span>
+                              </div>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#5b21b6' }}>Prescriptions Written</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Histograms: Dosage & Age Distribution */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.25rem' }}>
+                        
+                        {/* Dosage Distribution Histogram */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>📊 Dosage Distribution Histogram</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Dosage strength usage</span>
+                          </div>
+
+                          <div className="histogram-list">
+                            {(medicineAnalytics.dosageHistogram || []).length === 0 ? (
+                              <p style={{ fontStyle: 'italic', color: '#94a3b8', textAlign: 'center' }}>No dosage data available.</p>
+                            ) : (
+                              medicineAnalytics.dosageHistogram.map((d, idx) => (
+                                <div key={idx} className="histogram-row">
+                                  <div className="histogram-row-header">
+                                    <span style={{ fontWeight: 700 }}>{d.dosage}</span>
+                                    <span style={{ color: '#0f766e', fontWeight: 700 }}>{d.count} patients ({d.percentage}%)</span>
+                                  </div>
+                                  <div className="histogram-bar-track">
+                                    <div className="histogram-bar-fill" style={{ width: `${Math.max(5, d.percentage)}%` }}></div>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Patient Age Demographics Histogram */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>📈 Patient Age Demographics for this Drug</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Age distribution</span>
+                          </div>
+
+                          <div className="histogram-list">
+                            {(medicineAnalytics.ageHistogram || []).map((a, idx) => (
+                              <div key={idx} className="histogram-row">
+                                <div className="histogram-row-header">
+                                  <span>Age {a.range} years</span>
+                                  <span>{a.count} patients ({a.percentage}%)</span>
+                                </div>
+                                <div className="histogram-bar-track">
+                                  <div className="histogram-bar-fill purple" style={{ width: `${Math.max(4, a.percentage)}%` }}></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* Clinical Diagnostics & Co-Prescription Row */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.25rem' }}>
+                        
+                        {/* Diagnoses Correlation for this drug */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>🩺 Diagnostic Indication Correlation</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Conditions prescribed for</span>
+                          </div>
+
+                          <div className="histogram-list">
+                            {(medicineAnalytics.topDiagnoses || []).length === 0 ? (
+                              <p style={{ fontStyle: 'italic', color: '#94a3b8', textAlign: 'center' }}>No diagnosis correlation data.</p>
+                            ) : (
+                              medicineAnalytics.topDiagnoses.map((diag, idx) => (
+                                <div key={idx} className="histogram-row">
+                                  <div className="histogram-row-header">
+                                    <span>{diag.diagnosis}</span>
+                                    <span style={{ color: '#2563eb', fontWeight: 700 }}>{diag.count} Rx ({diag.percentage}%)</span>
+                                  </div>
+                                  <div className="histogram-bar-track">
+                                    <div className="histogram-bar-fill blue" style={{ width: `${Math.max(5, diag.percentage)}%` }}></div>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Co-Prescription Matrix */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>🔗 Common Co-Prescribed Companion Drugs</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Frequently prescribed together</span>
+                          </div>
+
+                          <div className="coprescription-grid">
+                            {(medicineAnalytics.coPrescriptions || []).length === 0 ? (
+                              <p style={{ fontStyle: 'italic', color: '#94a3b8', textAlign: 'center', width: '100%' }}>No companion drugs co-prescribed.</p>
+                            ) : (
+                              medicineAnalytics.coPrescriptions.map((co, idx) => (
+                                <div key={idx} className="coprescription-tag">
+                                  <span>💊 {co.name}</span>
+                                  <span className="rate-pill">{co.coOccurrenceRate}%</span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+
+                          {/* Dosing Frequency Breakdown */}
+                          {medicineAnalytics.topFrequencies?.length > 0 && (
+                            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Common Dosing Schedules:</span>
+                              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.35rem' }}>
+                                {medicineAnalytics.topFrequencies.map((f, idx) => (
+                                  <span key={idx} style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    ⏰ {f.frequency} ({f.count} Rx)
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+
+                      {/* Recent Patients Prescribed Table */}
+                      {medicineAnalytics.recentPrescriptions?.length > 0 && (
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>📋 Recent Patient Prescriptions for {medicineAnalytics.canonicalName}</h4>
+                          </div>
+
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.825rem' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
+                                  <th style={{ padding: '0.6rem 0.5rem' }}>Date</th>
+                                  <th style={{ padding: '0.6rem 0.5rem' }}>Patient Name</th>
+                                  <th style={{ padding: '0.6rem 0.5rem' }}>Age/Sex</th>
+                                  <th style={{ padding: '0.6rem 0.5rem' }}>Dosage</th>
+                                  <th style={{ padding: '0.6rem 0.5rem' }}>Frequency</th>
+                                  <th style={{ padding: '0.6rem 0.5rem' }}>Diagnosis</th>
+                                  <th style={{ padding: '0.6rem 0.5rem', textAlign: 'right' }}>Est. Qty</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {medicineAnalytics.recentPrescriptions.map((rx, idx) => (
+                                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ padding: '0.6rem 0.5rem', color: '#64748b' }}>{rx.date}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', fontWeight: 700 }}>{rx.patientName}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem' }}>{rx.patientAge}y / {rx.patientGender}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', fontWeight: 600, color: 'var(--primary)' }}>{rx.dosage}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem' }}>{rx.frequency}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', color: '#334155' }}>{rx.diagnosis}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', fontWeight: 800 }}>{rx.estimatedQty}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                    </>
+                  ) : (
+                    /* Initial Empty Search State */
+                    <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#fff', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔍</div>
+                      <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--neutral-dark)' }}>Search any medicine above</h4>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--neutral-body)' }}>
+                        Type a brand name or active composition to view total prescribed quantity, dosage histograms, and patient age demographics.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
           </div>
         </div>
       )}

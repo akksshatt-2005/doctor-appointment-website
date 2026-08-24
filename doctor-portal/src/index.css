@@ -780,3 +780,355 @@ input:focus, textarea:focus, select:focus {
     print-color-adjust: exact !important;
   }
 }
+
+/* ==========================================================================
+   Clinical Research & Medicine Analytics Modal Styles
+   ========================================================================== */
+
+.analytics-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.analytics-modal-window {
+  width: 100%;
+  max-width: 1020px;
+  max-height: 90vh;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+  border: 1px solid var(--neutral-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.analytics-modal-header {
+  padding: 1.25rem 1.75rem;
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  color: var(--white);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.analytics-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--white);
+}
+
+.analytics-modal-header p {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.8rem;
+  color: #ccfbf1;
+}
+
+.analytics-tab-bar {
+  display: flex;
+  background-color: #f1f5f9;
+  border-bottom: 1px solid var(--neutral-border);
+  padding: 0 1.75rem;
+  gap: 0.5rem;
+}
+
+.analytics-tab-btn {
+  padding: 0.85rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--neutral-body);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition-fast);
+}
+
+.analytics-tab-btn:hover {
+  color: var(--primary);
+}
+
+.analytics-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background-color: var(--white);
+}
+
+.analytics-modal-body {
+  padding: 1.75rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* KPI Summary Cards Grid */
+.analytics-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.analytics-kpi-card {
+  background: var(--white);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--neutral-border);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.analytics-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary);
+}
+
+.analytics-kpi-card.teal::before { background: #0f766e; }
+.analytics-kpi-card.blue::before { background: #2563eb; }
+.analytics-kpi-card.purple::before { background: #7c3aed; }
+.analytics-kpi-card.amber::before { background: #d97706; }
+
+.analytics-kpi-card .kpi-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.analytics-kpi-card .kpi-val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--neutral-dark);
+}
+
+.analytics-kpi-card .kpi-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Visual Section Cards */
+.analytics-panel {
+  background: var(--white);
+  border-radius: 12px;
+  border: 1px solid var(--neutral-border);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.analytics-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.75rem;
+}
+
+.analytics-panel-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--neutral-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Histogram Bars */
+.histogram-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.histogram-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.histogram-row-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--neutral-dark);
+}
+
+.histogram-bar-track {
+  height: 12px;
+  background-color: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+}
+
+.histogram-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #0f766e, #14b8a6);
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.histogram-bar-fill.purple {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+}
+
+.histogram-bar-fill.amber {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.histogram-bar-fill.blue {
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+}
+
+/* Ranked Medicine Items */
+.ranked-med-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  gap: 0.75rem;
+  transition: var(--transition-fast);
+}
+
+.ranked-med-item:hover {
+  border-color: #0f766e;
+  background-color: #f0fdfa;
+}
+
+.ranked-med-rank {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.ranked-med-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ranked-med-name {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--neutral-dark);
+}
+
+.ranked-med-comp {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.ranked-med-stats {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* Search input for medicine analytics */
+.med-analytics-search-wrap {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.med-analytics-search-input {
+  width: 100%;
+  padding: 0.85rem 1rem 0.85rem 2.75rem;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  border: 2px solid #cbd5e1;
+  outline: none;
+  transition: var(--transition-fast);
+  background-color: var(--white);
+}
+
+.med-analytics-search-input:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+}
+
+.med-analytics-search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* Co-Prescription Tags */
+.coprescription-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.coprescription-tag {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--neutral-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.coprescription-tag .rate-pill {
+  background-color: #0f766e;
+  color: var(--white);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+

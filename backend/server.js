@@ -11,6 +11,7 @@ import appointmentRoutes from './routes/appointmentRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import offlinePrescriptionRoutes from './routes/offlinePrescriptionRoutes.js';
 import medicineRoutes from './routes/medicineRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 import path from 'path';
 import { startReminderScheduler } from './services/scheduler.js';
 import { ensureDoctorAvailabilityAndTemplates } from './controllers/slotController.js';
@@ -149,6 +150,7 @@ app.use('/api/v1', appointmentRoutes);
 app.use('/api/v1', paymentRoutes);
 app.use('/api/v1', offlinePrescriptionRoutes);
 app.use('/api/v1', medicineRoutes);
+app.use('/api/v1', analyticsRoutes);
 
 // Serve uploads statically for local storage fallback
 app.use('/uploads', express.static(path.resolve('uploads')));
