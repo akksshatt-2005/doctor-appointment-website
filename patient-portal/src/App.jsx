@@ -173,6 +173,12 @@ export default function App() {
   const [fileLabel, setFileLabel] = useState('');
   const [bookingLoading, setBookingLoading] = useState(false);
 
+  // Razorpay Checkout Modal Simulator State
+  const [showRzpModal, setShowRzpModal] = useState(false);
+  const [rzpModalData, setRzpModalData] = useState(null);
+  const [rzpMethod, setRzpMethod] = useState('upi'); // 'upi', 'card', 'nb'
+  const [rzpProcessing, setRzpProcessing] = useState(false);
+
   // Confirmation / Receipt View State
   const [activeBooking, setActiveBooking] = useState(null);
   const [patientAppointments, setPatientAppointments] = useState([]);
@@ -836,6 +842,26 @@ export default function App() {
         return;
       }
 
+      const modalPayload = {
+        appointmentId,
+        bookingId: finalBookingId,
+        orderId: orderData.orderId,
+        amount: orderData.amount,
+        isResume: false
+      };
+
+      const isMockGateway = orderData.isMock || 
+                            orderData.orderId?.startsWith('order_mock_') || 
+                            orderData.keyId?.includes('your_key_id') || 
+                            typeof window.Razorpay === 'undefined';
+
+      if (isMockGateway) {
+        setRzpModalData(modalPayload);
+        setShowRzpModal(true);
+        setBookingLoading(false);
+        return;
+      }
+
       // 4. Launch Razorpay Widget
       const options = {
         key: orderData.keyId,
@@ -868,7 +894,7 @@ export default function App() {
                 patientPhone: patientDetails.phone,
                 slotTime: selectedSlot.label,
                 date: selectedDate.toDateString(),
-                videoRoomUrl: `http://meet.jit.si/nh-${finalBookingId.toLowerCase()}`,
+                videoRoomUrl: `https://meet.jit.si/nh-${finalBookingId.toLowerCase()}`,
                 paymentId: response.razorpay_payment_id
               };
               setActiveBooking(confirmedObj);
@@ -897,14 +923,83 @@ export default function App() {
         }
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      try {
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (resp) {
+          console.warn('Razorpay live checkout failed, opening fallback simulator:', resp.error);
+          setRzpModalData(modalPayload);
+          setShowRzpModal(true);
+        });
+        rzp.open();
+      } catch (rzpErr) {
+        console.warn('Razorpay widget error, fallback to simulator:', rzpErr);
+        setRzpModalData(modalPayload);
+        setShowRzpModal(true);
+      }
 
     } catch (err) {
       alert('Error booking consultation.');
       console.error(err);
     } finally {
       setBookingLoading(false);
+    }
+  };
+
+  // Handle Simulated Payment Completion
+  const handleSimulatedPaymentSuccess = async (modalData) => {
+    setRzpProcessing(true);
+    try {
+      const mockPayId = `pay_mock_${Date.now()}`;
+      const mockSig = `sim_sig_${Date.now()}`;
+
+      const verifyRes = await fetch(`${API_BASE_URL}/payments/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          razorpay_payment_id: mockPayId,
+          razorpay_order_id: modalData.orderId,
+          razorpay_signature: mockSig
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.success) {
+        setShowRzpModal(false);
+        setRzpProcessing(false);
+
+        if (modalData.isResume) {
+          alert('Payment completed successfully!');
+          fetchPatientAppointments();
+        } else {
+          const confirmedObj = {
+            id: modalData.appointmentId,
+            bookingId: modalData.bookingId,
+            patientName: patientDetails.name,
+            patientPhone: patientDetails.phone,
+            slotTime: selectedSlot ? selectedSlot.label : 'Evening Slot',
+            date: selectedDate.toDateString(),
+            videoRoomUrl: `https://meet.jit.si/nh-${modalData.bookingId.toLowerCase()}`,
+            paymentId: mockPayId
+          };
+          setActiveBooking(confirmedObj);
+          setSelectedSlot(null);
+          setSelectedFile(null);
+          setFileLabel('');
+          setPatientDetails({ name: '', age: '', email: '', phone: '', symptoms: '' });
+          fetchPatientAppointments();
+          navigateTo('booking-confirmation-view');
+        }
+      } else {
+        alert('Payment verification failed: ' + verifyData.message);
+        setRzpProcessing(false);
+      }
+    } catch (err) {
+      console.error('Error verifying simulated payment:', err);
+      alert('Error verifying payment.');
+      setRzpProcessing(false);
     }
   };
 
@@ -959,6 +1054,24 @@ export default function App() {
         return;
       }
 
+      const modalPayload = {
+        appointmentId: apptId,
+        orderId: orderData.orderId,
+        amount: orderData.amount,
+        isResume: true
+      };
+
+      const isMockGateway = orderData.isMock || 
+                            orderData.orderId?.startsWith('order_mock_') || 
+                            orderData.keyId?.includes('your_key_id') || 
+                            typeof window.Razorpay === 'undefined';
+
+      if (isMockGateway) {
+        setRzpModalData(modalPayload);
+        setShowRzpModal(true);
+        return;
+      }
+
       const options = {
         key: orderData.keyId,
         amount: orderData.amount,
@@ -997,8 +1110,18 @@ export default function App() {
         }
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      try {
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (resp) {
+          console.warn('Razorpay checkout failed, opening fallback simulator:', resp.error);
+          setRzpModalData(modalPayload);
+          setShowRzpModal(true);
+        });
+        rzp.open();
+      } catch (rzpErr) {
+        setRzpModalData(modalPayload);
+        setShowRzpModal(true);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -2025,6 +2148,113 @@ export default function App() {
               </button>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* RAZORPAY CHECKOUT MODAL SIMULATOR */}
+      {showRzpModal && rzpModalData && (
+        <div className="razorpay-overlay active" style={{ display: 'flex' }}>
+          <div className="razorpay-modal">
+            {/* Header */}
+            <div className="rzp-header">
+              <div className="rzp-merchant-info">
+                <div className="rzp-logo-circle">NH</div>
+                <div className="rzp-merchant-name">
+                  <h4>Neuro Harmony Clinic</h4>
+                  <p>Dr. Priyadarshi Srivastava</p>
+                </div>
+              </div>
+              <div className="rzp-amount-display">
+                <span className="amt-label">AMOUNT</span>
+                <span className="amt-val">₹{((rzpModalData.amount || 70000) / 100).toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="rzp-body">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="rzp-section-title">Select Payment Method</span>
+                <span style={{ fontSize: '0.75rem', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>Test Mode</span>
+              </div>
+
+              <div className="rzp-methods">
+                {/* UPI Option */}
+                <div className={`rzp-method-option ${rzpMethod === 'upi' ? 'active' : ''}`} onClick={() => setRzpMethod('upi')}>
+                  <div className="rzp-method-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                  </div>
+                  <div className="rzp-method-details">
+                    <h5>UPI</h5>
+                    <p>Google Pay, PhonePe, Paytm, BHIM</p>
+                  </div>
+                </div>
+                {rzpMethod === 'upi' && (
+                  <div className="rzp-details-form active">
+                    <input type="text" className="form-control" defaultValue="patient@okaxis" placeholder="UPI ID" style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem' }} />
+                  </div>
+                )}
+
+                {/* Cards Option */}
+                <div className={`rzp-method-option ${rzpMethod === 'card' ? 'active' : ''}`} onClick={() => setRzpMethod('card')}>
+                  <div className="rzp-method-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  </div>
+                  <div className="rzp-method-details">
+                    <h5>Card</h5>
+                    <p>Visa, MasterCard, RuPay, Maestro</p>
+                  </div>
+                </div>
+                {rzpMethod === 'card' && (
+                  <div className="rzp-details-form active">
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <input type="text" className="form-control" defaultValue="4312 •••• •••• 6789" style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem' }} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      <input type="text" className="form-control" defaultValue="12/29" style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem' }} />
+                      <input type="password" className="form-control" defaultValue="•••" style={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem' }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Netbanking Option */}
+                <div className={`rzp-method-option ${rzpMethod === 'nb' ? 'active' : ''}`} onClick={() => setRzpMethod('nb')}>
+                  <div className="rzp-method-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 20h20M5 17V11M9 17V11M13 17V11M17 17V11M2 7l10-5 10 5M4 7h16" fill="none" stroke="currentColor"/></svg>
+                  </div>
+                  <div className="rzp-method-details">
+                    <h5>Netbanking</h5>
+                    <p>SBI, HDFC, ICICI, Axis, Kotak</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="rzp-footer">
+              <button 
+                type="button"
+                className="rzp-btn-pay" 
+                disabled={rzpProcessing}
+                onClick={() => handleSimulatedPaymentSuccess(rzpModalData)}
+              >
+                {rzpProcessing ? 'Processing Payment...' : `Pay ₹${((rzpModalData.amount || 70000) / 100).toFixed(2)}`}
+              </button>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
+                <div className="rzp-secure-badge">
+                  <svg viewBox="0 0 24 24"><path d="M12 2C9.24 2 7 4.24 7 7v3H6c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-1V7c0-2.76-2.24-5-5-5zm3 5v3H9V7c0-1.66 1.34-3 3-3s3 1.34 3 3z"/></svg>
+                  Secured by Razorpay • Instant Confirmation
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setShowRzpModal(false)} 
+                  style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

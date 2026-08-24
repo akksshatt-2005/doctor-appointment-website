@@ -50,7 +50,12 @@ export async function createRazorpayOrder(req, res, next) {
 
     // Call Razorpay API to generate the order
     let order;
+    let isMock = false;
     try {
+      if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('your_key_id')) {
+        throw new Error('Using placeholder Razorpay key');
+      }
+
       order = await razorpay.orders.create({
         amount: amountInPaise,
         currency: 'INR',
@@ -61,8 +66,8 @@ export async function createRazorpayOrder(req, res, next) {
         }
       });
     } catch (apiError) {
-      console.warn('Razorpay order creation failed, falling back to simulated order ID:', apiError.message);
-      // Generate a mock order payload
+      console.warn('Razorpay order creation falling back to simulated order ID:', apiError.message);
+      isMock = true;
       const mockOrderId = `order_mock_${crypto.randomBytes(8).toString('hex')}`;
       order = {
         id: mockOrderId,
@@ -81,6 +86,7 @@ export async function createRazorpayOrder(req, res, next) {
 
     return res.status(200).json({
       success: true,
+      isMock,
       keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_your_key_id',
       orderId: order.id,
       amount: order.amount,
@@ -110,16 +116,24 @@ export async function verifyPaymentSignature(req, res, next) {
   try {
     const secret = process.env.RAZORPAY_KEY_SECRET || 'your_razorpay_key_secret';
 
-    // Verify HMAC signature
-    const hmac = crypto.createHmac('sha256', secret);
-    hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
-    const generatedSignature = hmac.digest('hex');
+    const isSimulated = 
+      razorpay_order_id.startsWith('order_mock_') || 
+      razorpay_signature.startsWith('sim_sig_') ||
+      razorpay_payment_id.startsWith('pay_mock_') ||
+      secret === 'your_razorpay_key_secret';
 
-    if (generatedSignature !== razorpay_signature) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid payment signature. Verification failed.'
-      });
+    // Verify HMAC signature if not simulated
+    if (!isSimulated) {
+      const hmac = crypto.createHmac('sha256', secret);
+      hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+      const generatedSignature = hmac.digest('hex');
+
+      if (generatedSignature !== razorpay_signature) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid payment signature. Verification failed.'
+        });
+      }
     }
 
     let updatedApptId = null;

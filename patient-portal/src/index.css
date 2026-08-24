@@ -894,7 +894,7 @@ textarea.form-control {
   height: 100%;
   background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 10000;
   justify-content: center;
   align-items: center;
 }
