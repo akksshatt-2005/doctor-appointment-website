@@ -523,10 +523,8 @@ export default function App() {
       csvContent += `Generated On,${new Date().toLocaleString()}\r\n`;
       csvContent += `Searched Medicine,${medicineAnalytics.canonicalName}\r\n`;
       csvContent += `Composition,${medicineAnalytics.canonicalComposition || 'N/A'}\r\n`;
-      csvContent += `Total Prescriptions,${medicineAnalytics.totalPrescriptions}\r\n`;
-      csvContent += `Unique Patients,${medicineAnalytics.totalPatients}\r\n`;
-      csvContent += `Total Quantity Prescribed (Units),${medicineAnalytics.totalQuantityPrescribed}\r\n`;
-      csvContent += `Avg Quantity Per Prescription,${medicineAnalytics.averageQuantityPerRx}\r\n\r\n`;
+      csvContent += `Total Patients Prescribed,${medicineAnalytics.totalPatients}\r\n`;
+      csvContent += `Total Prescriptions Written,${medicineAnalytics.totalPrescriptions}\r\n\r\n`;
 
       csvContent += `Dosage Distribution\r\nDosage,Patient Count,Percentage\r\n`;
       (medicineAnalytics.dosageHistogram || []).forEach(d => {
@@ -554,9 +552,9 @@ export default function App() {
       csvContent += `Total Unique Patients,${overviewAnalytics.totalUniquePatients}\r\n`;
       csvContent += `Total Unique Medicines,${overviewAnalytics.totalUniqueMedicines}\r\n\r\n`;
 
-      csvContent += `Top Prescribed Medicines\r\nRank,Medicine Name,Composition,Prescriptions,Total Units,Patients\r\n`;
+      csvContent += `Top Prescribed Medicines\r\nRank,Medicine Name,Composition,Patients Prescribed,Prescription Count\r\n`;
       (overviewAnalytics.topMedicines || []).forEach((m, idx) => {
-        csvContent += `${idx + 1},"${m.name}","${m.composition || 'N/A'}",${m.prescriptionCount},${m.totalQuantity},${m.patientCount}\r\n`;
+        csvContent += `${idx + 1},"${m.name}","${m.composition || 'N/A'}",${m.patientCount},${m.prescriptionCount}\r\n`;
       });
 
       csvContent += `\r\nTop Diagnoses Distribution\r\nDiagnosis,Count,Percentage\r\n`;
@@ -3093,7 +3091,7 @@ export default function App() {
                       fetchOverviewAnalytics(analyticsTimeframe);
                     }}
                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, background: '#f0fdf4', borderColor: '#86efac', color: '#166534' }}
-                    title="Open Clinical Research, Medicine Quantity & Prescription Analytics"
+                    title="Open Clinical Research & Prescription Analytics"
                   >
                     🔬 Research & Analytics
                   </button>
@@ -4088,7 +4086,7 @@ export default function App() {
                 <h3>
                   <span>🔬</span> Clinical Research & Prescription Analytics
                 </h3>
-                <p>Prescription patterns, medicine quantity analysis, dosage & patient demographics</p>
+                <p>Patient volume, prescription patterns, dosage & demographic histograms</p>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -4181,7 +4179,7 @@ export default function App() {
                 className={`analytics-tab-btn ${analyticsTab === 'medicine' ? 'active' : ''}`}
                 onClick={() => setAnalyticsTab('medicine')}
               >
-                💊 Medicine Deep-Dive & Quantity Analyzer
+                💊 Medicine Research & Patient Usage
               </button>
             </div>
 
@@ -4218,11 +4216,11 @@ export default function App() {
                         </div>
 
                         <div className="analytics-kpi-card amber">
-                          <span className="kpi-label">Total Quantity / Doses</span>
+                          <span className="kpi-label">Diagnoses Identified</span>
                           <span className="kpi-val">
-                            {(overviewAnalytics.topMedicines || []).reduce((acc, m) => acc + (m.totalQuantity || 0), 0)}
+                            {(overviewAnalytics.topDiagnoses || []).length}
                           </span>
-                          <span className="kpi-sub">Estimated Tablets / Units</span>
+                          <span className="kpi-sub">Distinct Clinical Categories</span>
                         </div>
                       </div>
 
@@ -4233,7 +4231,7 @@ export default function App() {
                         <div className="analytics-panel">
                           <div className="analytics-panel-header">
                             <h4>🏆 Top Prescribed Medicines Ranking</h4>
-                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Sorted by prescription volume</span>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Sorted by patient volume</span>
                           </div>
 
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '380px', overflowY: 'auto' }}>
@@ -4246,10 +4244,10 @@ export default function App() {
                                 </div>
                                 <div className="ranked-med-stats">
                                   <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary)' }}>
-                                    {med.totalQuantity} <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>units</span>
+                                    {med.patientCount} <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>patients</span>
                                   </span>
                                   <span style={{ fontSize: '0.75rem', color: 'var(--neutral-body)' }}>
-                                    {med.prescriptionCount} Rx • {med.patientCount} patients
+                                    {med.prescriptionCount} Prescriptions
                                   </span>
                                 </div>
                                 <button
@@ -4480,26 +4478,19 @@ export default function App() {
                             )}
                           </div>
 
-                          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f766e' }}>
-                                {medicineAnalytics.totalQuantityPrescribed} <span style={{ fontSize: '0.85rem' }}>Units</span>
+                              <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f766e' }}>
+                                {medicineAnalytics.totalPatients} <span style={{ fontSize: '0.95rem' }}>Patients</span>
                               </div>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#134e4a' }}>Total Prescribed Quantity</span>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#134e4a' }}>👥 Total Patients Prescribed</span>
                             </div>
 
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#2563eb' }}>
-                                {medicineAnalytics.totalPatients} <span style={{ fontSize: '0.85rem' }}>Patients</span>
+                              <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#2563eb' }}>
+                                {medicineAnalytics.totalPrescriptions} <span style={{ fontSize: '0.95rem' }}>Prescriptions</span>
                               </div>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1e40af' }}>Unique Individuals</span>
-                            </div>
-
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#7c3aed' }}>
-                                {medicineAnalytics.totalPrescriptions} <span style={{ fontSize: '0.85rem' }}>Rx</span>
-                              </div>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#5b21b6' }}>Prescriptions Written</span>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e40af' }}>📄 Prescriptions Written</span>
                             </div>
                           </div>
                         </div>
@@ -4628,7 +4619,7 @@ export default function App() {
                       {medicineAnalytics.recentPrescriptions?.length > 0 && (
                         <div className="analytics-panel">
                           <div className="analytics-panel-header">
-                            <h4>📋 Recent Patient Prescriptions for {medicineAnalytics.canonicalName}</h4>
+                            <h4>📋 Recent Patients Prescribed {medicineAnalytics.canonicalName}</h4>
                           </div>
 
                           <div style={{ overflowX: 'auto' }}>
@@ -4641,7 +4632,6 @@ export default function App() {
                                   <th style={{ padding: '0.6rem 0.5rem' }}>Dosage</th>
                                   <th style={{ padding: '0.6rem 0.5rem' }}>Frequency</th>
                                   <th style={{ padding: '0.6rem 0.5rem' }}>Diagnosis</th>
-                                  <th style={{ padding: '0.6rem 0.5rem', textAlign: 'right' }}>Est. Qty</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -4653,7 +4643,6 @@ export default function App() {
                                     <td style={{ padding: '0.6rem 0.5rem', fontWeight: 600, color: 'var(--primary)' }}>{rx.dosage}</td>
                                     <td style={{ padding: '0.6rem 0.5rem' }}>{rx.frequency}</td>
                                     <td style={{ padding: '0.6rem 0.5rem', color: '#334155' }}>{rx.diagnosis}</td>
-                                    <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', fontWeight: 800 }}>{rx.estimatedQty}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -4669,7 +4658,7 @@ export default function App() {
                       <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔍</div>
                       <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--neutral-dark)' }}>Search any medicine above</h4>
                       <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--neutral-body)' }}>
-                        Type a brand name or active composition to view total prescribed quantity, dosage histograms, and patient age demographics.
+                        Type a brand name or active composition to see how many patients are prescribed this medicine, dosage histograms, and patient age demographics.
                       </p>
                     </div>
                   )}
