@@ -480,3 +480,279 @@ export async function getMedicineAnalytics(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * GET /api/v1/doctor/analytics/patient-volume
+ * Practice analytics: Daily & Monthly patient volume with New vs. Follow-up patient tracking,
+ * day-of-week heatmaps, retention rate, and time-slot densities.
+ */
+export async function getPatientVolumeAnalytics(req, res, next) {
+  try {
+    const doctorProfile = await prisma.doctorProfile.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!doctorProfile) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found.'
+      });
+    }
+
+    const { month, year, timeframe } = req.query;
+
+    // 1. Fetch all offline prescriptions
+    const offlineRxs = await prisma.offlinePrescription.findMany({
+      where: { doctorId: doctorProfile.id },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    // 2. Fetch all online appointments (with prescription or scheduled/completed)
+    const onlineAppts = await prisma.appointment.findMany({
+      where: {
+        doctorId: doctorProfile.id,
+        status: { in: ['COMPLETED', 'SCHEDULED'] }
+      },
+      include: {
+        prescription: true,
+        patient: true
+      },
+      orderBy: { appointmentDate: 'asc' }
+    });
+
+    // 3. Unify visits chronologically
+    const allVisits = [];
+
+    offlineRxs.forEach(rx => {
+      const visitDate = rx.consultDate ? new Date(rx.consultDate) : (rx.createdAt ? new Date(rx.createdAt) : new Date());
+      const pName = rx.patientName || 'Unknown Patient';
+      const pPhone = rx.patientPhone || '';
+      const pAge = rx.patientAge || 0;
+      const patientKey = pPhone ? pPhone.trim() : `${pName.trim().toLowerCase()}_${pAge}`;
+
+      allVisits.push({
+        id: `offline_${rx.id}`,
+        patientKey,
+        patientName: pName,
+        patientAge: pAge,
+        patientGender: rx.patientGender || 'Not Specified',
+        patientPhone: pPhone,
+        consultDate: visitDate,
+        dateStr: visitDate.toISOString().split('T')[0],
+        type: 'Clinic Rx',
+        diagnosis: rx.diagnosis || 'General Consultation'
+      });
+    });
+
+    onlineAppts.forEach(appt => {
+      const visitDate = appt.appointmentDate ? new Date(appt.appointmentDate) : (appt.createdAt ? new Date(appt.createdAt) : new Date());
+      const pName = appt.patientName || appt.patient?.name || 'Online Patient';
+      const pPhone = appt.patientPhone || appt.patient?.phone || '';
+      const pAge = appt.patientAge || appt.patient?.age || 0;
+      const patientKey = pPhone ? pPhone.trim() : `${pName.trim().toLowerCase()}_${pAge}`;
+
+      allVisits.push({
+        id: `online_${appt.id}`,
+        patientKey,
+        patientName: pName,
+        patientAge: pAge,
+        patientGender: 'Not Specified',
+        patientPhone: pPhone,
+        consultDate: visitDate,
+        dateStr: visitDate.toISOString().split('T')[0],
+        type: 'Telehealth',
+        slotTime: appt.slotTime || '17:00 - 17:30',
+        diagnosis: appt.prescription?.diagnosis || appt.symptoms || 'Telehealth Consultation'
+      });
+    });
+
+    // Sort all visits chronologically ascending
+    allVisits.sort((a, b) => a.consultDate.getTime() - b.consultDate.getTime());
+
+    // 4. Determine New Patient vs. Follow-up status
+    const patientFirstVisitMap = new Map(); // patientKey -> firstDate
+    const patientTotalVisitsMap = new Map(); // patientKey -> count
+
+    allVisits.forEach(v => {
+      const count = (patientTotalVisitsMap.get(v.patientKey) || 0) + 1;
+      patientTotalVisitsMap.set(v.patientKey, count);
+
+      if (!patientFirstVisitMap.has(v.patientKey)) {
+        patientFirstVisitMap.set(v.patientKey, v.dateStr);
+        v.isNewPatient = true;
+        v.visitNumber = 1;
+      } else {
+        const firstDate = patientFirstVisitMap.get(v.patientKey);
+        // If it's the exact same day, treat same-day multi-entries as same visit; if different day, it's a follow-up
+        if (v.dateStr === firstDate && count === 1) {
+          v.isNewPatient = true;
+          v.visitNumber = 1;
+        } else {
+          v.isNewPatient = false;
+          v.visitNumber = count;
+        }
+      }
+    });
+
+    // 5. Aggregate by Month
+    const monthlyMap = new Map(); // "YYYY-MM" -> { month, monthLabel, total, newPatients, followUps, uniquePatients: Set }
+    const dailyMap = new Map(); // "YYYY-MM-DD" -> { date, dateLabel, dayOfWeek, total, newPatients, followUps, visits: [] }
+    const dayOfWeekMap = {
+      'Monday': { name: 'Mon', total: 0, newPatients: 0, followUps: 0, dayCount: new Set() },
+      'Tuesday': { name: 'Tue', total: 0, newPatients: 0, followUps: 0, dayCount: new Set() },
+      'Wednesday': { name: 'Wed', total: 0, newPatients: 0, followUps: 0, dayCount: new Set() },
+      'Thursday': { name: 'Thu', total: 0, newPatients: 0, followUps: 0, dayCount: new Set() },
+      'Friday': { name: 'Fri', total: 0, newPatients: 0, followUps: 0, dayCount: new Set() },
+      'Saturday': { name: 'Sat', total: 0, newPatients: 0, followUps: 0, dayCount: new Set() },
+      'Sunday': { name: 'Sun', total: 0, newPatients: 0, followUps: 0, dayCount: new Set() }
+    };
+
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    allVisits.forEach(v => {
+      const d = v.consultDate;
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const dateKey = v.dateStr;
+      const dayName = dayNames[d.getDay()];
+
+      // Monthly aggregation
+      if (!monthlyMap.has(monthKey)) {
+        const monthLabel = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        monthlyMap.set(monthKey, {
+          month: monthKey,
+          monthLabel,
+          total: 0,
+          newPatients: 0,
+          followUps: 0,
+          uniquePatients: new Set()
+        });
+      }
+      const mItem = monthlyMap.get(monthKey);
+      mItem.total++;
+      if (v.isNewPatient) mItem.newPatients++;
+      else mItem.followUps++;
+      mItem.uniquePatients.add(v.patientKey);
+
+      // Daily aggregation
+      if (!dailyMap.has(dateKey)) {
+        const dateLabel = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        dailyMap.set(dateKey, {
+          date: dateKey,
+          dateLabel,
+          dayOfWeek: dayName,
+          total: 0,
+          newPatients: 0,
+          followUps: 0,
+          visits: []
+        });
+      }
+      const dItem = dailyMap.get(dateKey);
+      dItem.total++;
+      if (v.isNewPatient) dItem.newPatients++;
+      else dItem.followUps++;
+      if (dItem.visits.length < 15) {
+        dItem.visits.push({
+          patientName: v.patientName,
+          patientAge: v.patientAge,
+          isNew: v.isNewPatient,
+          type: v.type,
+          diagnosis: v.diagnosis
+        });
+      }
+
+      // Day of Week
+      if (dayOfWeekMap[dayName]) {
+        dayOfWeekMap[dayName].total++;
+        if (v.isNewPatient) dayOfWeekMap[dayName].newPatients++;
+        else dayOfWeekMap[dayName].followUps++;
+        dayOfWeekMap[dayName].dayCount.add(dateKey);
+      }
+    });
+
+    // Format Monthly List with Month-over-Month Growth
+    const sortedMonthKeys = Array.from(monthlyMap.keys()).sort();
+    const monthlyVolume = sortedMonthKeys.map((k, idx) => {
+      const cur = monthlyMap.get(k);
+      let momGrowth = 0;
+      if (idx > 0) {
+        const prev = monthlyMap.get(sortedMonthKeys[idx - 1]);
+        if (prev && prev.total > 0) {
+          momGrowth = Math.round(((cur.total - prev.total) / prev.total) * 100);
+        }
+      }
+      return {
+        month: cur.month,
+        monthLabel: cur.monthLabel,
+        total: cur.total,
+        newPatients: cur.newPatients,
+        followUps: cur.followUps,
+        followUpRate: cur.total > 0 ? Math.round((cur.followUps / cur.total) * 100) : 0,
+        momGrowth
+      };
+    });
+
+    // Format Daily List (Sorted descending)
+    const sortedDateKeys = Array.from(dailyMap.keys()).sort().reverse();
+    let dailyVolume = sortedDateKeys.map(k => {
+      const cur = dailyMap.get(k);
+      return {
+        date: cur.date,
+        dateLabel: cur.dateLabel,
+        dayOfWeek: cur.dayOfWeek,
+        total: cur.total,
+        newPatients: cur.newPatients,
+        followUps: cur.followUps,
+        newRatio: cur.total > 0 ? Math.round((cur.newPatients / cur.total) * 100) : 0,
+        followUpRatio: cur.total > 0 ? Math.round((cur.followUps / cur.total) * 100) : 0,
+        visits: cur.visits
+      };
+    });
+
+    // Optional Filter by Month if requested
+    if (month) {
+      dailyVolume = dailyVolume.filter(d => d.date.startsWith(month));
+    }
+
+    // Day of Week Heatmap Array
+    const dayOfWeekPattern = Object.entries(dayOfWeekMap).map(([day, val]) => ({
+      day,
+      shortName: val.name,
+      totalVisits: val.total,
+      newPatients: val.newPatients,
+      followUps: val.followUps,
+      distinctDays: val.dayCount.size,
+      avgPatientsPerDay: val.dayCount.size > 0 ? (val.total / val.dayCount.size).toFixed(1) : '0.0'
+    }));
+
+    // Overall Practice Summary KPIs
+    const totalConsultations = allVisits.length;
+    const totalUniquePatients = patientFirstVisitMap.size;
+    const patientsWithFollowUp = Array.from(patientTotalVisitsMap.values()).filter(cnt => cnt > 1).length;
+    const retentionRate = totalUniquePatients > 0 ? Math.round((patientsWithFollowUp / totalUniquePatients) * 100) : 0;
+    const distinctActiveDays = dailyMap.size;
+    const avgPatientsPerDay = distinctActiveDays > 0 ? (totalConsultations / distinctActiveDays).toFixed(1) : '0.0';
+    const totalNewPatients = Array.from(dailyMap.values()).reduce((acc, d) => acc + d.newPatients, 0);
+    const totalFollowUps = Array.from(dailyMap.values()).reduce((acc, d) => acc + d.followUps, 0);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalConsultations,
+        totalUniquePatients,
+        totalNewPatients,
+        totalFollowUps,
+        retentionRate,
+        avgPatientsPerDay,
+        distinctActiveDays,
+        monthlyVolume,
+        dailyVolume,
+        dayOfWeekPattern
+      }
+    });
+
+  } catch (error) {
+    console.error('Patient volume analytics error:', error);
+    next(error);
+  }
+}
+

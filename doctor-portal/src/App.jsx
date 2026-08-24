@@ -151,11 +151,13 @@ export default function App() {
 
   // Clinical Research & Medicine Analytics State
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
-  const [analyticsTab, setAnalyticsTab] = useState('overview'); // 'overview' or 'medicine'
+  const [analyticsTab, setAnalyticsTab] = useState('overview'); // 'overview', 'medicine', 'volume'
   const [analyticsTimeframe, setAnalyticsTimeframe] = useState('all'); // 'all', '30days', '90days', '1year'
   const [overviewAnalytics, setOverviewAnalytics] = useState(null);
   const [searchedMedicine, setSearchedMedicine] = useState('');
   const [medicineAnalytics, setMedicineAnalytics] = useState(null);
+  const [patientVolumeData, setPatientVolumeData] = useState(null);
+  const [volumeMonthFilter, setVolumeMonthFilter] = useState('');
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [medSearchInput, setMedSearchInput] = useState('');
   const [medSearchSuggestions, setMedSearchSuggestions] = useState([]);
@@ -509,9 +511,29 @@ export default function App() {
     }
   };
 
+  // Fetch Practice & Patient Volume Analytics (Daily & Monthly New vs Follow-up)
+  const fetchPatientVolumeAnalytics = async (month = volumeMonthFilter) => {
+    if (!token) return;
+    setAnalyticsLoading(true);
+    try {
+      const monthQuery = month ? `&month=${month}` : '';
+      const res = await fetch(`${API_BASE_URL}/doctor/analytics/patient-volume?timeframe=${analyticsTimeframe}${monthQuery}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPatientVolumeData(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load patient volume analytics:', err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   // Export Analytics Data to CSV
   const exportAnalyticsCSV = () => {
-    if (!overviewAnalytics && !medicineAnalytics) {
+    if (!overviewAnalytics && !medicineAnalytics && !patientVolumeData) {
       alert('No analytics data to export.');
       return;
     }
@@ -545,6 +567,30 @@ export default function App() {
       (medicineAnalytics.coPrescriptions || []).forEach(co => {
         csvContent += `"${co.name}",${co.count},${co.coOccurrenceRate}%\r\n`;
       });
+    } else if (analyticsTab === 'volume' && patientVolumeData) {
+      csvContent += `Doctor Practice & Patient Volume Analytics Report\r\n`;
+      csvContent += `Generated On,${new Date().toLocaleString()}\r\n`;
+      csvContent += `Total Consultations,${patientVolumeData.totalConsultations}\r\n`;
+      csvContent += `Total Unique Patients,${patientVolumeData.totalUniquePatients}\r\n`;
+      csvContent += `Total New Patients (First Visits),${patientVolumeData.totalNewPatients}\r\n`;
+      csvContent += `Total Follow-Up Consultations,${patientVolumeData.totalFollowUps}\r\n`;
+      csvContent += `Follow-Up Retention Rate,${patientVolumeData.retentionRate}%\r\n`;
+      csvContent += `Average Patients Per Day,${patientVolumeData.avgPatientsPerDay}\r\n\r\n`;
+
+      csvContent += `Monthly Patient Footfall\r\nMonth,Total Consultations,New Patients,Follow-Up Visits,Follow-Up %,MoM Growth %\r\n`;
+      (patientVolumeData.monthlyVolume || []).forEach(m => {
+        csvContent += `"${m.monthLabel}",${m.total},${m.newPatients},${m.followUps},${m.followUpRate}%,${m.momGrowth > 0 ? '+' : ''}${m.momGrowth}%\r\n`;
+      });
+
+      csvContent += `\r\nDaily Patient Footfall Log\r\nDate,Day,Total Patients,New Patients,Follow-Up Patients\r\n`;
+      (patientVolumeData.dailyVolume || []).forEach(d => {
+        csvContent += `"${d.dateLabel}","${d.dayOfWeek}",${d.total},${d.newPatients},${d.followUps}\r\n`;
+      });
+
+      csvContent += `\r\nDay-of-Week Consultation Heatmap\r\nWeekday,Total Visits,Avg Patients/Day,New Patients,Follow-Ups\r\n`;
+      (patientVolumeData.dayOfWeekPattern || []).forEach(w => {
+        csvContent += `"${w.day}",${w.totalVisits},${w.avgPatientsPerDay},${w.newPatients},${w.followUps}\r\n`;
+      });
     } else if (overviewAnalytics) {
       csvContent += `Clinic Global Prescription & Clinical Analytics Report\r\n`;
       csvContent += `Generated On,${new Date().toLocaleString()}\r\n`;
@@ -571,9 +617,12 @@ export default function App() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    const fileName = analyticsTab === 'medicine' && medicineAnalytics 
-      ? `medicine_analytics_${medicineAnalytics.canonicalName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.csv`
-      : `clinic_prescription_analytics_${Date.now()}.csv`;
+    let fileName = `clinic_prescription_analytics_${Date.now()}.csv`;
+    if (analyticsTab === 'medicine' && medicineAnalytics) {
+      fileName = `medicine_analytics_${medicineAnalytics.canonicalName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.csv`;
+    } else if (analyticsTab === 'volume' && patientVolumeData) {
+      fileName = `doctor_practice_volume_${Date.now()}.csv`;
+    }
     link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
@@ -4181,6 +4230,17 @@ export default function App() {
               >
                 💊 Medicine Research & Patient Usage
               </button>
+
+              <button
+                type="button"
+                className={`analytics-tab-btn ${analyticsTab === 'volume' ? 'active' : ''}`}
+                onClick={() => {
+                  setAnalyticsTab('volume');
+                  if (!patientVolumeData) fetchPatientVolumeAnalytics();
+                }}
+              >
+                📅 Practice & Patient Volume (Daily/Monthly)
+              </button>
             </div>
 
             {/* Modal Body Content */}
@@ -4188,7 +4248,7 @@ export default function App() {
               {analyticsLoading ? (
                 <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
                   <div className="rzp-spinner" style={{ margin: '0 auto 1rem auto' }}></div>
-                  <p style={{ color: 'var(--neutral-body)', fontWeight: 600 }}>Analyzing clinical prescriptions...</p>
+                  <p style={{ color: 'var(--neutral-body)', fontWeight: 600 }}>Analyzing practice patient volume...</p>
                 </div>
               ) : analyticsTab === 'overview' ? (
                 /* =================== TAB 1: CLINIC OVERVIEW =================== */
@@ -4372,8 +4432,8 @@ export default function App() {
                     </>
                   )}
                 </>
-              ) : (
-                /* =================== TAB 2: MEDICINE DEEP-DIVE & QUANTITY ANALYZER =================== */
+              ) : analyticsTab === 'medicine' ? (
+                /* =================== TAB 2: MEDICINE RESEARCH & PATIENT USAGE =================== */
                 <>
                   {/* Medicine Search Box */}
                   <div className="analytics-panel" style={{ padding: '1rem' }}>
@@ -4661,6 +4721,226 @@ export default function App() {
                         Type a brand name or active composition to see how many patients are prescribed this medicine, dosage histograms, and patient age demographics.
                       </p>
                     </div>
+                  )}
+                </>
+              ) : (
+                /* =================== TAB 3: PRACTICE & PATIENT VOLUME =================== */
+                <>
+                  {patientVolumeData && (
+                    <>
+                      {/* Practice Health KPIs */}
+                      <div className="analytics-kpi-grid">
+                        <div className="analytics-kpi-card teal">
+                          <span className="kpi-label">Avg Daily Footfall</span>
+                          <span className="kpi-val">{patientVolumeData.avgPatientsPerDay}</span>
+                          <span className="kpi-sub">Patients / Working Day</span>
+                        </div>
+
+                        <div className="analytics-kpi-card blue">
+                          <span className="kpi-label">New Patients (First Visit)</span>
+                          <span className="kpi-val">{patientVolumeData.totalNewPatients}</span>
+                          <span className="kpi-sub">
+                            {patientVolumeData.totalConsultations > 0 ? Math.round((patientVolumeData.totalNewPatients / patientVolumeData.totalConsultations) * 100) : 0}% of Total Footfall
+                          </span>
+                        </div>
+
+                        <div className="analytics-kpi-card purple">
+                          <span className="kpi-label">Follow-Up Consultations</span>
+                          <span className="kpi-val">{patientVolumeData.totalFollowUps}</span>
+                          <span className="kpi-sub">
+                            {patientVolumeData.totalConsultations > 0 ? Math.round((patientVolumeData.totalFollowUps / patientVolumeData.totalConsultations) * 100) : 0}% of Total Footfall
+                          </span>
+                        </div>
+
+                        <div className="analytics-kpi-card amber">
+                          <span className="kpi-label">Follow-Up Retention Rate</span>
+                          <span className="kpi-val">{patientVolumeData.retentionRate}%</span>
+                          <span className="kpi-sub">Patients Returning for Follow-ups</span>
+                        </div>
+                      </div>
+
+                      {/* Month Filter Selector Bar */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '0.75rem 1.25rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>🗓️ Filter Daily Logs by Month:</span>
+                          <select
+                            value={volumeMonthFilter}
+                            onChange={(e) => {
+                              const mVal = e.target.value;
+                              setVolumeMonthFilter(mVal);
+                              fetchPatientVolumeAnalytics(mVal);
+                            }}
+                            style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
+                          >
+                            <option value="">All Recorded Months</option>
+                            {(patientVolumeData.monthlyVolume || []).map((m, idx) => (
+                              <option key={idx} value={m.month}>{m.monthLabel}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.8rem', fontWeight: 700 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#15803d' }}>
+                            <span style={{ width: '12px', height: '12px', backgroundColor: '#22c55e', borderRadius: '3px', display: 'inline-block' }}></span> New Patients
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#1d4ed8' }}>
+                            <span style={{ width: '12px', height: '12px', backgroundColor: '#3b82f6', borderRadius: '3px', display: 'inline-block' }}></span> Follow-Ups
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Two Column Grid: Daily Breakdown & Monthly Trends */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.25rem' }}>
+                        
+                        {/* Daily Patient Footfall Histogram */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>📅 Daily Patient Volume & Consultation Split</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                              {(patientVolumeData.dailyVolume || []).length} Active Consultation Days
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '420px', overflowY: 'auto' }}>
+                            {(patientVolumeData.dailyVolume || []).length === 0 ? (
+                              <p style={{ fontStyle: 'italic', color: '#94a3b8', textAlign: 'center', padding: '1.5rem 0' }}>No consultation records found for this period.</p>
+                            ) : (
+                              patientVolumeData.dailyVolume.map((d, idx) => (
+                                <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                      <span style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--neutral-dark)' }}>{d.dateLabel}</span>
+                                      <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: '0.4rem' }}>({d.dayOfWeek})</span>
+                                    </div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--neutral-dark)' }}>
+                                      {d.total} <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>Patients</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Stacked Bar Track */}
+                                  <div style={{ height: '10px', background: '#e2e8f0', borderRadius: '5px', overflow: 'hidden', display: 'flex' }}>
+                                    <div style={{ width: `${d.newRatio}%`, background: '#22c55e' }} title={`New: ${d.newPatients} (${d.newRatio}%)`}></div>
+                                    <div style={{ width: `${d.followUpRatio}%`, background: '#3b82f6' }} title={`Follow-Up: ${d.followUps} (${d.followUpRatio}%)`}></div>
+                                  </div>
+
+                                  {/* Sub-label indicators */}
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.725rem', color: '#64748b', fontWeight: 600 }}>
+                                    <span style={{ color: '#16a34a' }}>🟢 {d.newPatients} New ({d.newRatio}%)</span>
+                                    <span style={{ color: '#2563eb' }}>🔵 {d.followUps} Follow-ups ({d.followUpRatio}%)</span>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Monthly Footfall & Practice Growth */}
+                        <div className="analytics-panel">
+                          <div className="analytics-panel-header">
+                            <h4>📈 Monthly Footfall & Practice Expansion</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Month-over-Month Footfall</span>
+                          </div>
+
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.825rem' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
+                                  <th style={{ padding: '0.6rem 0.5rem' }}>Month</th>
+                                  <th style={{ padding: '0.6rem 0.5rem', textAlign: 'center' }}>Total</th>
+                                  <th style={{ padding: '0.6rem 0.5rem', color: '#16a34a', textAlign: 'center' }}>New</th>
+                                  <th style={{ padding: '0.6rem 0.5rem', color: '#2563eb', textAlign: 'center' }}>Follow-ups</th>
+                                  <th style={{ padding: '0.6rem 0.5rem', textAlign: 'center' }}>Follow-Up %</th>
+                                  <th style={{ padding: '0.6rem 0.5rem', textAlign: 'right' }}>Growth</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(patientVolumeData.monthlyVolume || []).map((m, idx) => (
+                                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ padding: '0.6rem 0.5rem', fontWeight: 700 }}>{m.monthLabel}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', fontWeight: 800, textAlign: 'center' }}>{m.total}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', fontWeight: 700, color: '#16a34a', textAlign: 'center' }}>{m.newPatients}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', fontWeight: 700, color: '#2563eb', textAlign: 'center' }}>{m.followUps}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', textAlign: 'center', fontWeight: 600 }}>{m.followUpRate}%</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', fontWeight: 800, color: m.momGrowth >= 0 ? '#16a34a' : '#dc2626' }}>
+                                      {idx === 0 ? '—' : `${m.momGrowth > 0 ? '+' : ''}${m.momGrowth}%`}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Monthly Stacked Bars Overview */}
+                          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>Monthly Volume Histogram</span>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', height: '90px', padding: '0.75rem 0.25rem 0 0.25rem' }}>
+                              {(patientVolumeData.monthlyVolume || []).map((m, idx) => {
+                                const maxVol = Math.max(...patientVolumeData.monthlyVolume.map(x => x.total), 1);
+                                const newHeight = Math.round((m.newPatients / maxVol) * 80);
+                                const followUpHeight = Math.round((m.followUps / maxVol) * 80);
+                                return (
+                                  <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                                      <div style={{ width: '100%', height: `${followUpHeight}px`, background: '#3b82f6', borderTopLeftRadius: '3px', borderTopRightRadius: '3px' }} title={`${m.monthLabel} Follow-Ups: ${m.followUps}`}></div>
+                                      <div style={{ width: '100%', height: `${newHeight}px`, background: '#22c55e' }} title={`${m.monthLabel} New Patients: ${m.newPatients}`}></div>
+                                    </div>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#64748b' }}>{m.monthLabel.split(' ')[0]}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* Day of Week Peak Heatmap */}
+                      <div className="analytics-panel">
+                        <div className="analytics-panel-header">
+                          <h4>🗓️ Day-of-Week Patient Footfall Pattern</h4>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Identify peak clinic consultation days</span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem' }}>
+                          {(patientVolumeData.dayOfWeekPattern || []).map((w, idx) => {
+                            const isPeak = Math.max(...patientVolumeData.dayOfWeekPattern.map(x => parseFloat(x.avgPatientsPerDay))) === parseFloat(w.avgPatientsPerDay) && parseFloat(w.avgPatientsPerDay) > 0;
+                            return (
+                              <div
+                                key={idx}
+                                style={{
+                                  background: isPeak ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' : '#f8fafc',
+                                  border: isPeak ? '2px solid #86efac' : '1px solid #e2e8f0',
+                                  borderRadius: '10px',
+                                  padding: '0.85rem 0.5rem',
+                                  textAlign: 'center',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '0.25rem',
+                                  position: 'relative'
+                                }}
+                              >
+                                {isPeak && (
+                                  <span style={{ position: 'absolute', top: '-8px', right: '8px', background: '#16a34a', color: '#fff', fontSize: '0.6rem', fontWeight: 800, padding: '1px 6px', borderRadius: '10px' }}>
+                                    ⭐ PEAK
+                                  </span>
+                                )}
+                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: isPeak ? '#166534' : 'var(--neutral-dark)' }}>
+                                  {w.day}
+                                </span>
+                                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: isPeak ? '#15803d' : 'var(--primary)' }}>
+                                  {w.avgPatientsPerDay}
+                                </div>
+                                <span style={{ fontSize: '0.65rem', color: '#64748b' }}>Avg Patients/Day</span>
+                                <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '0.25rem', marginTop: '0.25rem', fontSize: '0.65rem', color: '#475569' }}>
+                                  {w.totalVisits} Total ({w.newPatients} New • {w.followUps} Ret)
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                    </>
                   )}
                 </>
               )}

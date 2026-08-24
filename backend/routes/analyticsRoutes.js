@@ -2,7 +2,8 @@ import express from 'express';
 import { requireAuth, requireRole } from '../middleware/authMiddleware.js';
 import {
   getPrescriptionOverview,
-  getMedicineAnalytics
+  getMedicineAnalytics,
+  getPatientVolumeAnalytics
 } from '../controllers/analyticsController.js';
 
 const router = express.Router();
@@ -12,5 +13,6 @@ router.use(requireAuth, requireRole('DOCTOR'));
 
 router.get('/doctor/analytics/overview', getPrescriptionOverview);
 router.get('/doctor/analytics/medicine', getMedicineAnalytics);
+router.get('/doctor/analytics/patient-volume', getPatientVolumeAnalytics);
 
 export default router;
