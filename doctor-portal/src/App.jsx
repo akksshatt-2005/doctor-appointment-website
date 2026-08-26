@@ -22,6 +22,27 @@ const formatPrintDate = (dateStr) => {
   return dateStr;
 };
 
+const formatBP = (val) => {
+  if (!val || !String(val).trim()) return '';
+  const trimmed = String(val).trim();
+  if (/mmhg/i.test(trimmed)) return trimmed;
+  return `${trimmed} mmHg`;
+};
+
+const formatPulse = (val) => {
+  if (!val || !String(val).trim()) return '';
+  const trimmed = String(val).trim();
+  if (/bpm/i.test(trimmed)) return trimmed;
+  return `${trimmed} bpm`;
+};
+
+const formatWeight = (val) => {
+  if (!val || !String(val).trim()) return '';
+  const trimmed = String(val).trim();
+  if (/kg/i.test(trimmed)) return trimmed;
+  return `${trimmed} kg`;
+};
+
 const ALL_FONTS = [
   // Sans-serif
   { name: 'Plus Jakarta Sans', category: 'Sans-serif' },
@@ -2611,27 +2632,45 @@ export default function App() {
                     <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Blood Pressure (BP)</label>
                     <input 
                       type="text" 
-                      placeholder="e.g. 120/80 mmHg"
+                      placeholder="e.g. 120/80"
                       value={offlineForm.bp}
                       onChange={e => setOfflineForm(prev => ({ ...prev, bp: e.target.value }))}
+                      onBlur={e => {
+                        const val = e.target.value.trim();
+                        if (val && !/mmhg/i.test(val)) {
+                          setOfflineForm(prev => ({ ...prev, bp: `${val} mmHg` }));
+                        }
+                      }}
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                     <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Pulse Rate</label>
                     <input 
                       type="text" 
-                      placeholder="e.g. 72 bpm"
+                      placeholder="e.g. 72"
                       value={offlineForm.pulse}
                       onChange={e => setOfflineForm(prev => ({ ...prev, pulse: e.target.value }))}
+                      onBlur={e => {
+                        const val = e.target.value.trim();
+                        if (val && !/bpm/i.test(val)) {
+                          setOfflineForm(prev => ({ ...prev, pulse: `${val} bpm` }));
+                        }
+                      }}
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Weight (kg)</label>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Weight</label>
                     <input 
                       type="text" 
-                      placeholder="e.g. 68 kg"
+                      placeholder="e.g. 68"
                       value={offlineForm.weight}
                       onChange={e => setOfflineForm(prev => ({ ...prev, weight: e.target.value }))}
+                      onBlur={e => {
+                        const val = e.target.value.trim();
+                        if (val && !/kg/i.test(val)) {
+                          setOfflineForm(prev => ({ ...prev, weight: `${val} kg` }));
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -3595,19 +3634,19 @@ export default function App() {
                                   {offlineForm.bp && offlineForm.bp.trim() && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                       <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.78em' }}>BLOOD PRESSURE</span>
-                                      <span style={{ fontWeight: 800, color: '#1e293b' }}>{offlineForm.bp}</span>
+                                      <span style={{ fontWeight: 800, color: '#1e293b' }}>{formatBP(offlineForm.bp)}</span>
                                     </div>
                                   )}
                                   {offlineForm.pulse && offlineForm.pulse.trim() && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                       <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.78em' }}>PULSE RATE</span>
-                                      <span style={{ fontWeight: 800, color: '#1e293b' }}>{offlineForm.pulse}</span>
+                                      <span style={{ fontWeight: 800, color: '#1e293b' }}>{formatPulse(offlineForm.pulse)}</span>
                                     </div>
                                   )}
                                   {offlineForm.weight && offlineForm.weight.trim() && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                       <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.78em' }}>WEIGHT</span>
-                                      <span style={{ fontWeight: 800, color: '#1e293b' }}>{offlineForm.weight}</span>
+                                      <span style={{ fontWeight: 800, color: '#1e293b' }}>{formatWeight(offlineForm.weight)}</span>
                                     </div>
                                   )}
                                 </div>
@@ -3938,9 +3977,9 @@ export default function App() {
 
                                 {/* Vitals & Clinical Overview */}
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', backgroundColor: '#ffffff', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.8rem' }}>
-                                  <div><span style={{ color: '#64748b' }}>BP:</span> <strong style={{ color: '#1e293b' }}>{histRx.bp || '—'}</strong></div>
-                                  <div><span style={{ color: '#64748b' }}>Pulse:</span> <strong style={{ color: '#1e293b' }}>{histRx.pulse || '—'}</strong></div>
-                                  <div><span style={{ color: '#64748b' }}>Weight:</span> <strong style={{ color: '#1e293b' }}>{histRx.weight || '—'}</strong></div>
+                                  <div><span style={{ color: '#64748b' }}>BP:</span> <strong style={{ color: '#1e293b' }}>{histRx.bp ? formatBP(histRx.bp) : '—'}</strong></div>
+                                  <div><span style={{ color: '#64748b' }}>Pulse:</span> <strong style={{ color: '#1e293b' }}>{histRx.pulse ? formatPulse(histRx.pulse) : '—'}</strong></div>
+                                  <div><span style={{ color: '#64748b' }}>Weight:</span> <strong style={{ color: '#1e293b' }}>{histRx.weight ? formatWeight(histRx.weight) : '—'}</strong></div>
                                   <div><span style={{ color: '#64748b' }}>Visit Date:</span> <strong style={{ color: '#1e293b' }}>{consultDateFormatted}</strong></div>
                                 </div>
 
