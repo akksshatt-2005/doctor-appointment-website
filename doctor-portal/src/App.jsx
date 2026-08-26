@@ -3520,43 +3520,30 @@ export default function App() {
                       )}
 
                       {/* Structured Patient Grid */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr', gap: '0.75rem 0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.6rem 0.8rem', fontSize: '0.82em', marginBottom: '1.25rem', backgroundColor: '#f8fafc' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.05fr 1.05fr 1.05fr 1fr', gap: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.5rem 0.75rem', fontSize: '0.82em', marginBottom: '1rem', backgroundColor: '#f8fafc', alignItems: 'center' }}>
                         <div>
                           <div><strong style={{ color: '#64748b', fontSize: '0.72em' }}>PATIENT NAME</strong></div>
-                          <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '1.05em', marginTop: '0.1rem' }}>{offlineForm.patientName || '__________________'}</div>
+                          <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '1.02em', marginTop: '0.1rem', wordBreak: 'break-word' }}>{offlineForm.patientName || '__________________'}</div>
                         </div>
                         <div>
                           <div><strong style={{ color: '#64748b', fontSize: '0.72em' }}>AGE / GENDER</strong></div>
-                          <div style={{ color: '#1e293b', fontSize: '1em', marginTop: '0.1rem' }}>
+                          <div style={{ color: '#1e293b', fontSize: '0.95em', marginTop: '0.1rem' }}>
                             {offlineForm.patientAge ? `${offlineForm.patientAge} Yrs` : '___ Yrs'} / {offlineForm.patientGender}
                           </div>
                         </div>
                         <div>
                           <div><strong style={{ color: '#64748b', fontSize: '0.72em' }}>PHONE NUMBER</strong></div>
-                          <div style={{ color: '#1e293b', fontSize: '1em', marginTop: '0.1rem' }}>{offlineForm.patientPhone || '__________________'}</div>
+                          <div style={{ color: '#1e293b', fontSize: '0.95em', marginTop: '0.1rem' }}>{offlineForm.patientPhone || '__________________'}</div>
                         </div>
                         <div>
                           <div><strong style={{ color: '#64748b', fontSize: '0.72em' }}>DATE OF CONSULTATION</strong></div>
-                          <div style={{ color: '#1e293b', fontSize: '1em', marginTop: '0.1rem' }}>
+                          <div style={{ color: '#1e293b', fontSize: '0.95em', marginTop: '0.1rem' }}>
                             {formatPrintDate(offlineForm.consultDate)}
                           </div>
                         </div>
-                        
-                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem' }}>
-                          <div><strong style={{ color: '#64748b', fontSize: '0.72em' }}>BLOOD PRESSURE</strong></div>
-                          <div style={{ color: '#1e293b', fontSize: '1em', marginTop: '0.1rem' }}>{offlineForm.bp || '___/___ mmHg'}</div>
-                        </div>
-                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem' }}>
-                          <div><strong style={{ color: '#64748b', fontSize: '0.72em' }}>PULSE RATE</strong></div>
-                          <div style={{ color: '#1e293b', fontSize: '1em', marginTop: '0.1rem' }}>{offlineForm.pulse || '___ bpm'}</div>
-                        </div>
-                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem' }}>
-                          <div><strong style={{ color: '#64748b', fontSize: '0.72em' }}>WEIGHT</strong></div>
-                          <div style={{ color: '#1e293b', fontSize: '1em', marginTop: '0.1rem' }}>{offlineForm.weight || '___ kg'}</div>
-                        </div>
-                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem' }}>
+                        <div>
                           <div><strong style={{ color: '#64748b', fontSize: '0.72em' }}>RX ID / REFERENCE</strong></div>
-                          <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '1em', marginTop: '0.1rem' }}>
+                          <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95em', marginTop: '0.1rem' }}>
                             {offlineForm.referenceId || (selectedOfflineRxId ? `OFF-RX-${selectedOfflineRxId.slice(0, 8).toUpperCase()}` : 'OFFLINE-NEW')}
                           </div>
                         </div>
@@ -3565,9 +3552,39 @@ export default function App() {
                       {/* Side-by-Side Content Layout below Patient Grid */}
                       <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '1.5rem', marginTop: '1rem', alignItems: 'start' }}>
                         
-                        {/* Left Column: Diagnosis & Clinical Notes, Chief Complaints, Tests & General Advice */}
+                        {/* Left Column: Vitals (if recorded), Chief Complaints, Diagnosis & Clinical Notes, Tests & General Advice */}
                         <div style={{ borderRight: '1px solid #cbd5e1', paddingRight: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', minHeight: '300px' }}>
                           
+                          {/* 0. Vitals Card (BP, Pulse, Weight) - Only rendered when doctor writes them */}
+                          {(Boolean(offlineForm.bp && offlineForm.bp.trim()) || Boolean(offlineForm.pulse && offlineForm.pulse.trim()) || Boolean(offlineForm.weight && offlineForm.weight.trim())) && (
+                            <div>
+                              <div style={{ fontSize: '0.75em', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.35rem', textTransform: 'uppercase' }}>VITALS</div>
+                              <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                                <div style={{ width: '4px', backgroundColor: '#e11d48' }}></div>
+                                <div style={{ flex: 1, padding: '0.5rem 0.75rem', backgroundColor: '#f8fafc', fontSize: '0.84em', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                  {offlineForm.bp && offlineForm.bp.trim() && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.78em' }}>BLOOD PRESSURE</span>
+                                      <span style={{ fontWeight: 800, color: '#1e293b' }}>{offlineForm.bp}</span>
+                                    </div>
+                                  )}
+                                  {offlineForm.pulse && offlineForm.pulse.trim() && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.78em' }}>PULSE RATE</span>
+                                      <span style={{ fontWeight: 800, color: '#1e293b' }}>{offlineForm.pulse}</span>
+                                    </div>
+                                  )}
+                                  {offlineForm.weight && offlineForm.weight.trim() && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.78em' }}>WEIGHT</span>
+                                      <span style={{ fontWeight: 800, color: '#1e293b' }}>{offlineForm.weight}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* 1. Chief Complaints Card */}
                           <div>
                             <div style={{ fontSize: '0.75em', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.35rem', textTransform: 'uppercase' }}>CHIEF COMPLAINTS</div>
