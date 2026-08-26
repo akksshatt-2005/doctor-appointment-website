@@ -4365,87 +4365,28 @@ export default function App() {
 
                       </div>
 
-                      {/* Demographics & Trends Grid */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-                        
-                        {/* Age Demographics Histogram */}
-                        <div className="analytics-panel">
+                      {/* Monthly Timeline Overview (if available) */}
+                      {overviewAnalytics.monthlyTrends?.length > 0 && (
+                        <div className="analytics-panel" style={{ marginTop: '1.25rem' }}>
                           <div className="analytics-panel-header">
-                            <h4>📊 Patient Age Demographics Histogram</h4>
-                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>All patient age bins</span>
+                            <h4>📈 Monthly Prescription Volume Trend</h4>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Consultations per month</span>
                           </div>
-
-                          <div className="histogram-list">
-                            {(overviewAnalytics.ageHistogram || []).map((ageItem, idx) => (
-                              <div key={idx} className="histogram-row">
-                                <div className="histogram-row-header">
-                                  <span>Age Group {ageItem.range} yrs</span>
-                                  <span>{ageItem.count} patients ({ageItem.percentage}%)</span>
+                          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', height: '90px', padding: '0.75rem 0.5rem 0.25rem' }}>
+                            {overviewAnalytics.monthlyTrends.map((t, idx) => {
+                              const maxCount = Math.max(...overviewAnalytics.monthlyTrends.map(x => x.count), 1);
+                              const heightPct = Math.round((t.count / maxCount) * 100);
+                              return (
+                                <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+                                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)' }}>{t.count}</span>
+                                  <div style={{ width: '100%', height: `${Math.max(12, heightPct)}%`, backgroundColor: '#0f766e', borderRadius: '4px' }} title={`${t.month}: ${t.count} Rx`}></div>
+                                  <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>{t.month}</span>
                                 </div>
-                                <div className="histogram-bar-track">
-                                  <div className="histogram-bar-fill purple" style={{ width: `${Math.max(4, ageItem.percentage)}%` }}></div>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
-
-                        {/* Gender Distribution */}
-                        <div className="analytics-panel">
-                          <div className="analytics-panel-header">
-                            <h4>⚧️ Patient Gender Breakdown</h4>
-                          </div>
-
-                          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'space-around', alignItems: 'center', padding: '1rem 0' }}>
-                            <div style={{ textAlign: 'center' }}>
-                              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#2563eb' }}>
-                                {overviewAnalytics.genderDistribution?.Male || 0}
-                              </div>
-                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>👨 Male</span>
-                            </div>
-
-                            <div style={{ height: '50px', width: '1px', backgroundColor: '#e2e8f0' }}></div>
-
-                            <div style={{ textAlign: 'center' }}>
-                              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#db2777' }}>
-                                {overviewAnalytics.genderDistribution?.Female || 0}
-                              </div>
-                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>👩 Female</span>
-                            </div>
-
-                            <div style={{ height: '50px', width: '1px', backgroundColor: '#e2e8f0' }}></div>
-
-                            <div style={{ textAlign: 'center' }}>
-                              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0d9488' }}>
-                                {overviewAnalytics.genderDistribution?.Other || 0}
-                              </div>
-                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>🧑 Other</span>
-                            </div>
-                          </div>
-
-                          {/* Monthly Timeline mini overview */}
-                          {overviewAnalytics.monthlyTrends?.length > 0 && (
-                            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
-                              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>
-                                📈 Monthly Prescription Volume Trend
-                              </div>
-                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', height: '60px', padding: '0 0.5rem' }}>
-                                {overviewAnalytics.monthlyTrends.map((t, idx) => {
-                                  const maxCount = Math.max(...overviewAnalytics.monthlyTrends.map(x => x.count), 1);
-                                  const heightPct = Math.round((t.count / maxCount) * 100);
-                                  return (
-                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
-                                      <div style={{ width: '100%', height: `${Math.max(10, heightPct)}%`, backgroundColor: '#0f766e', borderRadius: '3px' }} title={`${t.month}: ${t.count} Rx`}></div>
-                                      <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{t.month.split('-')[1]}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                      </div>
+                      )}
                     </>
                   )}
                 </>
