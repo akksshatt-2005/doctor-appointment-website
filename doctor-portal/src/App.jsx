@@ -486,14 +486,44 @@ export default function App() {
     }
   };
 
-  // Fetch Specific Medicine Analytics
+  // Extract distinct active compositions from medicines list and past prescriptions
+  const getDistinctCompositions = () => {
+    const compMap = new Map();
+    (medicinesList || []).forEach(m => {
+      if (m.composition && m.composition.trim()) {
+        const c = m.composition.trim();
+        if (!compMap.has(c.toLowerCase())) {
+          compMap.set(c.toLowerCase(), c);
+        }
+      }
+    });
+    (offlineRxList || []).forEach(rx => {
+      let rawMeds = rx.medications;
+      if (typeof rawMeds === 'string') {
+        try { rawMeds = JSON.parse(rawMeds); } catch (e) { rawMeds = []; }
+      }
+      if (Array.isArray(rawMeds)) {
+        rawMeds.forEach(m => {
+          if (m && m.composition && m.composition.trim()) {
+            const c = m.composition.trim();
+            if (!compMap.has(c.toLowerCase())) {
+              compMap.set(c.toLowerCase(), c);
+            }
+          }
+        });
+      }
+    });
+    return Array.from(compMap.values());
+  };
+
+  // Fetch Specific Composition Research & Patient Usage Analytics
   const fetchMedicineAnalytics = async (medName, timeframe = analyticsTimeframe) => {
     if (!token || !medName || !medName.trim()) return;
     setAnalyticsLoading(true);
     const cleanName = medName.trim();
     setSearchedMedicine(cleanName);
     try {
-      const res = await fetch(`${API_BASE_URL}/doctor/analytics/medicine?name=${encodeURIComponent(cleanName)}&timeframe=${timeframe}`, {
+      const res = await fetch(`${API_BASE_URL}/doctor/analytics/medicine?composition=${encodeURIComponent(cleanName)}&timeframe=${timeframe}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -501,11 +531,11 @@ export default function App() {
         setMedicineAnalytics(data.data);
         setAnalyticsTab('medicine');
       } else {
-        alert(data.message || 'No data found for this medicine.');
+        alert(data.message || 'No data found for this composition.');
       }
     } catch (err) {
-      console.error('Failed to load medicine analytics:', err);
-      alert('Error loading medicine analytics.');
+      console.error('Failed to load composition analytics:', err);
+      alert('Error loading composition analytics.');
     } finally {
       setAnalyticsLoading(false);
     }
@@ -4245,7 +4275,7 @@ export default function App() {
                 className={`analytics-tab-btn ${analyticsTab === 'medicine' ? 'active' : ''}`}
                 onClick={() => setAnalyticsTab('medicine')}
               >
-                💊 Medicine Research & Patient Usage
+                🔬 Composition Research & Usage
               </button>
 
               <button
@@ -4330,11 +4360,14 @@ export default function App() {
                                 <button
                                   type="button"
                                   className="btn btn-secondary"
-                                  onClick={() => fetchMedicineAnalytics(med.name)}
+                                  onClick={() => {
+                                    fetchMedicineAnalytics(med.composition || med.name);
+                                    setAnalyticsTab('medicine');
+                                  }}
                                   style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: 600 }}
-                                  title="Analyze this medicine"
+                                  title="Analyze this composition"
                                 >
-                                  🔍 Analyze
+                                  🔬 Analyze
                                 </button>
                               </div>
                             ))}
@@ -4391,10 +4424,19 @@ export default function App() {
                   )}
                 </>
               ) : analyticsTab === 'medicine' ? (
-                /* =================== TAB 2: MEDICINE RESEARCH & PATIENT USAGE =================== */
+                /* =================== TAB 2: ACTIVE COMPOSITION RESEARCH & PATIENT USAGE =================== */
                 <>
-                  {/* Medicine Search Box */}
+                  {/* Active Composition Search Box */}
                   <div className="analytics-panel" style={{ padding: '1rem' }}>
+                    <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        🔬 Search Active Drug Composition Only
+                      </span>
+                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                        Single composition matching (excludes combos)
+                      </span>
+                    </div>
+
                     <div className="med-analytics-search-wrap">
                       <svg className="med-analytics-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -4402,17 +4444,15 @@ export default function App() {
                       <input
                         type="text"
                         className="med-analytics-search-input"
-                        placeholder="Search any medicine name or composition (e.g. Shanla, Crampgen E, Modalix, Vitablast, Sertraline)..."
+                        placeholder="Search active composition (e.g. Sertraline, Clonazepam, Escitalopram, Paracetamol, Olanzapine)..."
                         value={medSearchInput}
                         onChange={(e) => {
                           const val = e.target.value;
                           setMedSearchInput(val);
                           if (val.trim().length >= 2) {
-                            const suggestions = (medicinesList || []).filter(m => 
-                              m.name.toLowerCase().includes(val.toLowerCase()) || 
-                              (m.composition && m.composition.toLowerCase().includes(val.toLowerCase()))
-                            );
-                            setMedSearchSuggestions(suggestions);
+                            const searchLower = val.toLowerCase().trim();
+                            const matches = getDistinctCompositions().filter(c => c.toLowerCase().includes(searchLower));
+                            setMedSearchSuggestions(matches);
                           } else {
                             setMedSearchSuggestions([]);
                           }
@@ -4429,34 +4469,34 @@ export default function App() {
                     {/* Auto-suggestions Dropdown */}
                     {medSearchSuggestions.length > 0 && (
                       <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', backgroundColor: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.5rem', maxHeight: '180px', overflowY: 'auto' }}>
-                        {medSearchSuggestions.map((m, idx) => (
+                        {medSearchSuggestions.map((comp, idx) => (
                           <div
                             key={idx}
                             onClick={() => {
-                              fetchMedicineAnalytics(m.name);
-                              setMedSearchInput(m.name);
+                              fetchMedicineAnalytics(comp);
+                              setMedSearchInput(comp);
                               setMedSearchSuggestions([]);
                             }}
                             style={{ padding: '0.4rem 0.75rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                             className="suggestion-row"
                           >
-                            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{m.name}</span>
-                            {m.composition && <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{m.composition}</span>}
+                            <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f766e' }}>🔬 {comp}</span>
+                            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Active Composition</span>
                           </div>
                         ))}
                       </div>
                     )}
 
-                    {/* Quick Medicine Recommendation Pills */}
+                    {/* Quick Composition Recommendation Pills */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Quick Select:</span>
-                      {(overviewAnalytics?.topMedicines || medicinesList.slice(0, 6)).map((m, idx) => (
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Quick Compositions:</span>
+                      {getDistinctCompositions().slice(0, 8).map((comp, idx) => (
                         <button
                           key={idx}
                           type="button"
                           onClick={() => {
-                            fetchMedicineAnalytics(m.name);
-                            setMedSearchInput(m.name);
+                            fetchMedicineAnalytics(comp);
+                            setMedSearchInput(comp);
                             setMedSearchSuggestions([]);
                           }}
                           style={{
@@ -4470,7 +4510,7 @@ export default function App() {
                             cursor: 'pointer'
                           }}
                         >
-                          💊 {m.name}
+                          🔬 {comp}
                         </button>
                       ))}
                     </div>
@@ -4479,19 +4519,24 @@ export default function App() {
                   {/* Deep Dive Results */}
                   {medicineAnalytics ? (
                     <>
-                      {/* Drug Profile Header Banner */}
+                      {/* Composition Profile Header Banner */}
                       <div className="analytics-panel" style={{ background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)', borderColor: '#99f6e4' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <span style={{ fontSize: '1.5rem' }}>💊</span>
+                              <span style={{ fontSize: '1.5rem' }}>🔬</span>
                               <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: '#0f766e' }}>
-                                {medicineAnalytics.canonicalName}
+                                {medicineAnalytics.canonicalComposition || medicineAnalytics.canonicalName}
                               </h3>
                             </div>
-                            {medicineAnalytics.canonicalComposition && (
-                              <div style={{ fontSize: '0.85rem', color: '#115e59', fontWeight: 600, marginTop: '0.25rem' }}>
-                                Composition: <strong>{medicineAnalytics.canonicalComposition}</strong>
+                            {medicineAnalytics.brands && medicineAnalytics.brands.length > 0 && (
+                              <div style={{ fontSize: '0.85rem', color: '#115e59', fontWeight: 600, marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                <span>Associated Prescribed Brands:</span>
+                                {medicineAnalytics.brands.map((b, idx) => (
+                                  <span key={idx} style={{ backgroundColor: '#ffffff', color: '#0f766e', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid #99f6e4', fontSize: '0.78rem', fontWeight: 700 }}>
+                                    {b.name} ({b.count})
+                                  </span>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -4546,7 +4591,7 @@ export default function App() {
                         {/* Patient Age Demographics Histogram */}
                         <div className="analytics-panel">
                           <div className="analytics-panel-header">
-                            <h4>📈 Patient Age Demographics for this Drug</h4>
+                            <h4>📈 Patient Age Demographics for this Composition</h4>
                             <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Age distribution</span>
                           </div>
 
@@ -4570,7 +4615,7 @@ export default function App() {
                       {/* Clinical Diagnostics & Co-Prescription Row */}
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.25rem' }}>
                         
-                        {/* Diagnoses Correlation for this drug */}
+                        {/* Diagnoses Correlation for this composition */}
                         <div className="analytics-panel">
                           <div className="analytics-panel-header">
                             <h4>🩺 Diagnostic Indication Correlation</h4>
@@ -4637,7 +4682,7 @@ export default function App() {
                       {medicineAnalytics.recentPrescriptions?.length > 0 && (
                         <div className="analytics-panel">
                           <div className="analytics-panel-header">
-                            <h4>📋 Recent Patients Prescribed {medicineAnalytics.canonicalName}</h4>
+                            <h4>📋 Recent Patients Prescribed {medicineAnalytics.canonicalComposition || medicineAnalytics.canonicalName}</h4>
                           </div>
 
                           <div style={{ overflowX: 'auto' }}>
@@ -4647,6 +4692,7 @@ export default function App() {
                                   <th style={{ padding: '0.6rem 0.5rem' }}>Date</th>
                                   <th style={{ padding: '0.6rem 0.5rem' }}>Patient Name</th>
                                   <th style={{ padding: '0.6rem 0.5rem' }}>Age/Sex</th>
+                                  <th style={{ padding: '0.6rem 0.5rem' }}>Prescribed Brand</th>
                                   <th style={{ padding: '0.6rem 0.5rem' }}>Dosage</th>
                                   <th style={{ padding: '0.6rem 0.5rem' }}>Frequency</th>
                                   <th style={{ padding: '0.6rem 0.5rem' }}>Diagnosis</th>
@@ -4658,7 +4704,8 @@ export default function App() {
                                     <td style={{ padding: '0.6rem 0.5rem', color: '#64748b' }}>{rx.date}</td>
                                     <td style={{ padding: '0.6rem 0.5rem', fontWeight: 700 }}>{rx.patientName}</td>
                                     <td style={{ padding: '0.6rem 0.5rem' }}>{rx.patientAge}y / {rx.patientGender}</td>
-                                    <td style={{ padding: '0.6rem 0.5rem', fontWeight: 600, color: 'var(--primary)' }}>{rx.dosage}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', fontWeight: 700, color: 'var(--primary)' }}>{rx.medicineName || rx.name}</td>
+                                    <td style={{ padding: '0.6rem 0.5rem', fontWeight: 600 }}>{rx.dosage}</td>
                                     <td style={{ padding: '0.6rem 0.5rem' }}>{rx.frequency}</td>
                                     <td style={{ padding: '0.6rem 0.5rem', color: '#334155' }}>{rx.diagnosis}</td>
                                   </tr>
@@ -4673,10 +4720,10 @@ export default function App() {
                   ) : (
                     /* Initial Empty Search State */
                     <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#fff', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-                      <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔍</div>
-                      <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--neutral-dark)' }}>Search any medicine above</h4>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔬</div>
+                      <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--neutral-dark)' }}>Search any active composition above</h4>
                       <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--neutral-body)' }}>
-                        Type a brand name or active composition to see how many patients are prescribed this medicine, dosage histograms, and patient age demographics.
+                        Type an active composition name (e.g. Sertraline, Clonazepam, Escitalopram) to see patient counts, prescribed brands, dosage histograms, and clinical indications.
                       </p>
                     </div>
                   )}

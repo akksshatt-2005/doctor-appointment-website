@@ -248,9 +248,73 @@ export async function getPrescriptionOverview(req, res, next) {
   }
 }
 
+// Helper to split a composition string into its individual active ingredients
+function splitCompositionIngredients(compStr) {
+  if (!compStr) return [];
+  return compStr
+    .split(/\s*(?:\+|\/|&|\bwith\b|\band\b)\s*/i)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+// Helper to clean an ingredient name for comparison (stripping dosage numbers, units, IP/USP, and whitespace)
+function cleanIngredientForMatch(ing) {
+  if (!ing) return '';
+  return ing
+    .toLowerCase()
+    .replace(/\b\d+(\.\d+)?\s*(mg|mcg|g|ml|iu|%)\b/gi, '')
+    .replace(/\b(ip|usp|bp|sr|er|cr|pr|dt|tab|cap|tablets|capsules|syrup)\b/gi, '')
+    .replace(/[(),]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Check if a medicine's composition strictly matches the searched composition.
+// Strict rule: If user searches for a composition (e.g. "Clonazepam"), combination drugs containing
+// that composition + another composition (e.g. "Clonazepam + Escitalopram") are EXCLUDED.
+function matchExactComposition(medComp, searchComp) {
+  if (!medComp || !searchComp) return false;
+
+  const medIngs = splitCompositionIngredients(medComp);
+  const searchIngs = splitCompositionIngredients(searchComp);
+
+  if (medIngs.length === 0 || searchIngs.length === 0) return false;
+
+  // Exact number of active components must match
+  if (medIngs.length !== searchIngs.length) {
+    return false;
+  }
+
+  const cleanMedIngs = medIngs.map(cleanIngredientForMatch).filter(Boolean);
+  const cleanSearchIngs = searchIngs.map(cleanIngredientForMatch).filter(Boolean);
+
+  if (cleanMedIngs.length !== cleanSearchIngs.length) {
+    return false;
+  }
+
+  const matched = new Set();
+  for (const s of cleanSearchIngs) {
+    let foundIdx = -1;
+    for (let i = 0; i < cleanMedIngs.length; i++) {
+      if (matched.has(i)) continue;
+      const m = cleanMedIngs[i];
+      if (m === s || m.includes(s) || s.includes(m)) {
+        foundIdx = i;
+        break;
+      }
+    }
+    if (foundIdx === -1) {
+      return false;
+    }
+    matched.add(foundIdx);
+  }
+
+  return true;
+}
+
 /**
- * GET /api/v1/doctor/analytics/medicine?name=...
- * Deep-dive research analytics for a specific searched medication.
+ * GET /api/v1/doctor/analytics/medicine?name=... or ?composition=...
+ * Deep-dive research analytics by active composition.
  */
 export async function getMedicineAnalytics(req, res, next) {
   try {
@@ -265,16 +329,27 @@ export async function getMedicineAnalytics(req, res, next) {
       });
     }
 
-    const { name, timeframe } = req.query;
-    if (!name || !name.trim()) {
+    const { name, composition, timeframe } = req.query;
+    const targetComp = (composition || name || '').trim();
+    if (!targetComp) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a medicine name to search.'
+        message: 'Please provide a composition to search.'
       });
     }
 
-    const searchTarget = normalizeMedName(name);
     const dateLimit = getDateFilter(timeframe);
+
+    // Fetch doctor's medicine catalog to resolve compositions for medicines missing composition in older rx records
+    const doctorMeds = await prisma.medicine.findMany({
+      where: { doctorId: doctorProfile.id }
+    });
+    const medCatalogMap = new Map();
+    doctorMeds.forEach(m => {
+      if (m.name && m.composition) {
+        medCatalogMap.set(normalizeMedName(m.name), m.composition.trim());
+      }
+    });
 
     // Fetch offline prescriptions
     const offlineWhere = { doctorId: doctorProfile.id };
@@ -311,11 +386,12 @@ export async function getMedicineAnalytics(req, res, next) {
     const frequencyDistribution = new Map(); // "1-0-1" -> count
     const diagnosisDistribution = new Map(); // diagnosis -> count
     const coPrescribedMap = new Map(); // other medicine name -> count
+    const brandMap = new Map(); // brand name -> count
     const ageBins = { '<18': 0, '18-30': 0, '31-45': 0, '46-60': 0, '60+': 0 };
     const genderMap = { Male: 0, Female: 0, Other: 0 };
     const matchingRecords = [];
-    let canonicalName = name.trim();
-    let canonicalComposition = '';
+    let canonicalComposition = targetComp;
+    let canonicalName = '';
 
     function checkAndProcessRecord(rx, isOnline = false) {
       let rawMeds = isOnline ? rx.prescription?.medications : rx.medications;
@@ -324,91 +400,107 @@ export async function getMedicineAnalytics(req, res, next) {
       }
       if (!Array.isArray(rawMeds)) return;
 
-      // Check if this prescription contains the searched medicine
-      const foundMed = rawMeds.find(m => {
-        if (!m || !m.name) return false;
-        const normName = normalizeMedName(m.name);
-        const normComp = normalizeMedName(m.composition || '');
-        return normName.includes(searchTarget) || normComp.includes(searchTarget);
+      // Find all medications in this prescription that match the searched composition
+      const matchingMedsInRx = rawMeds.filter(m => {
+        if (!m) return false;
+        const comp = (m.composition && m.composition.trim()) || (m.name && medCatalogMap.get(normalizeMedName(m.name))) || '';
+        return matchExactComposition(comp, targetComp);
       });
 
-      if (!foundMed) return;
+      if (matchingMedsInRx.length === 0) return;
 
-      canonicalName = foundMed.name;
-      if (foundMed.composition && !canonicalComposition) {
-        canonicalComposition = foundMed.composition;
-      }
+      matchingMedsInRx.forEach(foundMed => {
+        const medBrandName = foundMed.name ? foundMed.name.trim() : 'Generic';
+        brandMap.set(medBrandName, (brandMap.get(medBrandName) || 0) + 1);
 
-      totalOccurrences++;
-      const qty = estimateQuantity(foundMed);
-      totalQuantity += qty;
+        if (!canonicalName) canonicalName = medBrandName;
+        if (foundMed.composition && (!canonicalComposition || canonicalComposition === targetComp)) {
+          canonicalComposition = foundMed.composition;
+        }
 
-      const pName = isOnline ? rx.patientName : rx.patientName;
-      const pPhone = isOnline ? (rx.patientPhone || rx.patient?.phone) : (rx.patientPhone || '');
-      const pAge = isOnline ? rx.patientAge : rx.patientAge;
-      const pGender = isOnline ? 'Not Specified' : (rx.patientGender || 'Not Specified');
-      const diagnosis = rx.diagnosis || (isOnline ? rx.prescription?.diagnosis : '') || 'Unspecified';
-      const createdAt = rx.createdAt ? new Date(rx.createdAt) : new Date();
+        totalOccurrences++;
+        const qty = estimateQuantity(foundMed);
+        totalQuantity += qty;
 
-      const patientKey = pPhone ? pPhone : `${pName}_${pAge}`;
-      matchedPatients.add(patientKey);
+        const pName = rx.patientName || (isOnline ? rx.patient?.fullName : '');
+        const pPhone = rx.patientPhone || (isOnline ? rx.patient?.phone : '') || '';
+        const pAge = rx.patientAge || (isOnline ? rx.patient?.age : '');
+        const pGender = isOnline ? 'Not Specified' : (rx.patientGender || 'Not Specified');
+        const diagnosis = rx.diagnosis || (isOnline ? rx.prescription?.diagnosis : '') || 'Unspecified';
+        const createdAt = rx.createdAt ? new Date(rx.createdAt) : new Date();
 
-      // Dosage distribution
-      const dosageStr = (foundMed.dosage || 'Standard').trim();
-      dosageDistribution.set(dosageStr, (dosageDistribution.get(dosageStr) || 0) + 1);
+        const patientKey = pPhone ? pPhone : `${pName}_${pAge}`;
+        matchedPatients.add(patientKey);
 
-      // Frequency distribution
-      const freqStr = (foundMed.frequency || foundMed.freq || 'Standard').trim();
-      frequencyDistribution.set(freqStr, (frequencyDistribution.get(freqStr) || 0) + 1);
+        // Dosage distribution
+        const dosageStr = (foundMed.dosage || 'Standard').trim();
+        dosageDistribution.set(dosageStr, (dosageDistribution.get(dosageStr) || 0) + 1);
 
-      // Diagnosis distribution
-      if (diagnosis) {
-        const diagClean = diagnosis.trim();
-        diagnosisDistribution.set(diagClean, (diagnosisDistribution.get(diagClean) || 0) + 1);
-      }
+        // Frequency distribution
+        const freqStr = (foundMed.frequency || foundMed.freq || 'Standard').trim();
+        frequencyDistribution.set(freqStr, (frequencyDistribution.get(freqStr) || 0) + 1);
 
-      // Age Bins
-      if (pAge) {
-        if (pAge < 18) ageBins['<18']++;
-        else if (pAge <= 30) ageBins['18-30']++;
-        else if (pAge <= 45) ageBins['31-45']++;
-        else if (pAge <= 60) ageBins['46-60']++;
-        else ageBins['60+']++;
-      }
+        // Diagnosis distribution
+        if (diagnosis) {
+          const diagClean = diagnosis.trim();
+          diagnosisDistribution.set(diagClean, (diagnosisDistribution.get(diagClean) || 0) + 1);
+        }
 
-      // Gender
-      if (pGender.toLowerCase().startsWith('m')) genderMap.Male++;
-      else if (pGender.toLowerCase().startsWith('f')) genderMap.Female++;
-      else genderMap.Other++;
+        // Age Bins
+        if (pAge) {
+          const ageNum = Number(pAge);
+          if (ageNum < 18) ageBins['<18']++;
+          else if (ageNum <= 30) ageBins['18-30']++;
+          else if (ageNum <= 45) ageBins['31-45']++;
+          else if (ageNum <= 60) ageBins['46-60']++;
+          else ageBins['60+']++;
+        }
 
-      // Co-prescribed medicines
-      rawMeds.forEach(otherMed => {
-        if (!otherMed || !otherMed.name) return;
-        const otherNorm = normalizeMedName(otherMed.name);
-        if (otherNorm !== normalizeMedName(foundMed.name)) {
-          const otherDisplay = otherMed.name.trim();
-          coPrescribedMap.set(otherDisplay, (coPrescribedMap.get(otherDisplay) || 0) + 1);
+        // Gender
+        if (pGender.toLowerCase().startsWith('m')) genderMap.Male++;
+        else if (pGender.toLowerCase().startsWith('f')) genderMap.Female++;
+        else genderMap.Other++;
+
+        // Co-prescribed companion medicines (excluding the matched medicine)
+        rawMeds.forEach(otherMed => {
+          if (!otherMed || !otherMed.name) return;
+          const otherNorm = normalizeMedName(otherMed.name);
+          if (otherNorm !== normalizeMedName(foundMed.name)) {
+            const otherDisplay = otherMed.name.trim();
+            coPrescribedMap.set(otherDisplay, (coPrescribedMap.get(otherDisplay) || 0) + 1);
+          }
+        });
+
+        // Sample recent records (up to 15)
+        if (matchingRecords.length < 15) {
+          matchingRecords.push({
+            id: rx.id,
+            date: createdAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+            patientName: pName,
+            patientAge: pAge,
+            patientGender: pGender,
+            medicineName: medBrandName,
+            composition: foundMed.composition || canonicalComposition,
+            diagnosis,
+            dosage: foundMed.dosage || '-',
+            frequency: foundMed.frequency || foundMed.freq || '-',
+            estimatedQty: qty
+          });
         }
       });
-
-      // Sample recent records (up to 10)
-      if (matchingRecords.length < 10) {
-        matchingRecords.push({
-          id: rx.id,
-          date: createdAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-          patientName: pName,
-          patientAge: pAge,
-          patientGender: pGender,
-          diagnosis,
-          dosage: foundMed.dosage || '-',
-          frequency: foundMed.frequency || foundMed.freq || '-',
-          estimatedQty: qty
-        });
-      }
     }
 
     offlineRxs.forEach(rx => checkAndProcessRecord(rx, false));
     onlineAppts.forEach(appt => checkAndProcessRecord(appt, true));
+
+    // Brands list
+    const brands = Array.from(brandMap.entries())
+      .map(([name, count]) => ({
+        name,
+        count,
+        percentage: totalOccurrences > 0 ? Math.round((count / totalOccurrences) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count);
 
     // Dosage Histogram Array
     const dosageHistogram = Array.from(dosageDistribution.entries())
@@ -426,7 +518,7 @@ export async function getMedicineAnalytics(req, res, next) {
       percentage: totalOccurrences > 0 ? Math.round((count / totalOccurrences) * 100) : 0
     }));
 
-    // Top Diagnoses for this medicine
+    // Top Diagnoses for this composition
     const topDiagnoses = Array.from(diagnosisDistribution.entries())
       .map(([diagnosis, count]) => ({
         diagnosis,
@@ -458,9 +550,10 @@ export async function getMedicineAnalytics(req, res, next) {
     return res.status(200).json({
       success: true,
       data: {
-        searchedQuery: name,
-        canonicalName,
-        canonicalComposition,
+        searchedQuery: targetComp,
+        canonicalName: canonicalName || targetComp,
+        canonicalComposition: canonicalComposition || targetComp,
+        brands,
         totalPrescriptions: totalOccurrences,
         totalPatients: matchedPatients.size,
         totalQuantityPrescribed: totalQuantity,
