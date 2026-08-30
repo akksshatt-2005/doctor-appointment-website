@@ -3250,7 +3250,7 @@ export default function App() {
 
                 {/* Diagnosis */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Clinical Diagnosis Notes</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Clinical Diagnosis</label>
                   <textarea 
                     placeholder="e.g. Mild anxiety disorder with secondary insomnia"
                     rows="2"
@@ -4227,9 +4227,9 @@ export default function App() {
                             </div>
                           </div>
 
-                          {/* 2. Notes / Diagnosis Card */}
+                          {/* 2. Diagnosis Card */}
                           <div>
-                            <div style={{ fontSize: '0.75em', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.35rem', textTransform: 'uppercase' }}>DIAGNOSIS & NOTES</div>
+                            <div style={{ fontSize: '0.75em', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.35rem', textTransform: 'uppercase' }}>DIAGNOSIS</div>
                             <div style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
                               <div style={{ width: '4px', backgroundColor: '#0f766e' }}></div>
                               <div style={{ flex: 1, padding: '0.6rem 0.8rem', backgroundColor: '#f8fafc', fontSize: '0.85em', color: offlineForm.diagnosis ? '#000000' : '#94a3b8', fontWeight: offlineForm.diagnosis ? 700 : 'normal', lineHeight: 1.4, wordBreak: 'break-word', whiteSpace: 'pre-wrap', fontStyle: offlineForm.diagnosis ? 'normal' : 'italic' }}>
@@ -4554,7 +4554,7 @@ export default function App() {
                                     </div>
                                   )}
                                   <div style={{ backgroundColor: '#ffffff', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                                    <div style={{ fontWeight: 800, color: '#0f766e', fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Diagnosis Notes</div>
+                                    <div style={{ fontWeight: 800, color: '#0f766e', fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Diagnosis</div>
                                     <div style={{ color: '#1e293b', whiteSpace: 'pre-wrap' }}>{histRx.diagnosis || 'No clinical diagnosis recorded.'}</div>
                                   </div>
                                 </div>
