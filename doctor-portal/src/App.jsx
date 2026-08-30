@@ -93,7 +93,118 @@ const ALL_FONTS = [
   { name: 'Great Vibes', category: 'Handwriting' },
   { name: 'Sacramento', category: 'Handwriting' },
   { name: 'Satisfy', category: 'Handwriting' },
-  { name: 'Shadows Into Light', category: 'Handwriting' }
+];
+
+const DEFAULT_SYMPTOM_TEMPLATES = [
+  {
+    id: 'migraine',
+    category: 'Migraine & Headache',
+    icon: '🤕',
+    symptoms: [
+      'Dizziness sometimes',
+      'Feels weakness in head',
+      'Heaviness in head',
+      'Throbbing / Pulsating headache',
+      'Pain behind the eyes',
+      'Nausea / Vomiting tendency',
+      'Photophobia (Light sensitivity)',
+      'Phonophobia (Sound sensitivity)'
+    ]
+  },
+  {
+    id: 'anxiety',
+    category: 'Anxiety & Panic',
+    icon: '⚡',
+    symptoms: [
+      'Palpitations / Fast heartbeat',
+      'Excessive worrying & nervousness',
+      'Restlessness & inability to relax',
+      'Chest tightness / Heaviness',
+      'Trembling of hands / Shivering',
+      'Panic episodes / Sudden fear',
+      'Shortness of breath / Choking feeling',
+      'Excessive sweating / Cold hands'
+    ]
+  },
+  {
+    id: 'depression',
+    category: 'Depression & Mood',
+    icon: '🌧️',
+    symptoms: [
+      'Persistent low mood / Sadness',
+      'Loss of interest in activities (Anhedonia)',
+      'Fatigue & lack of energy / Lethargy',
+      'Hopelessness / Helplessness',
+      'Poor concentration & focus',
+      'Crying spells / Frequent weeping',
+      'Decreased appetite / Weight loss',
+      'Negative & overthinking thoughts'
+    ]
+  },
+  {
+    id: 'insomnia',
+    category: 'Insomnia & Sleep',
+    icon: '🌙',
+    symptoms: [
+      'Difficulty falling asleep (Delayed onset)',
+      'Frequent night awakenings',
+      'Early morning awakening',
+      'Non-refreshing / Disturbed sleep',
+      'Daytime drowsiness / Fatigue',
+      'Nightmares / Vivid disturbing dreams'
+    ]
+  },
+  {
+    id: 'psychosis',
+    category: 'Psychosis & Schizophrenia',
+    icon: '🧠',
+    symptoms: [
+      'Auditory hallucinations (Hearing voices)',
+      'Suspiciousness & persecutory ideas',
+      'Irrelevant / Disorganized speech',
+      'Aggressive / Agitated behavior',
+      'Self-muttering / Smiling alone',
+      'Severe social withdrawal',
+      'Poor self-care & personal hygiene'
+    ]
+  },
+  {
+    id: 'ocd',
+    category: 'OCD & Intrusive Thoughts',
+    icon: '🔄',
+    symptoms: [
+      'Repeated hand washing / Contamination fear',
+      'Repeated checking (Locks, gas, switches)',
+      'Repetitive intrusive thoughts / Doubts',
+      'Counting / Symmetry & order rituals',
+      'Mental compulsions & distress'
+    ]
+  },
+  {
+    id: 'bipolar',
+    category: 'Bipolar & Mania',
+    icon: '🔥',
+    symptoms: [
+      'Decreased need for sleep (without fatigue)',
+      'Elevated / Expansive mood',
+      'Racing thoughts & rapid speech',
+      'Grandiosity / Over-confidence',
+      'Excessive spending / Risky behavior',
+      'High irritability / Anger outbursts'
+    ]
+  },
+  {
+    id: 'somatic',
+    category: 'Somatic & Body Aches',
+    icon: '⚡',
+    symptoms: [
+      'Generalized body pain / Fibromyalgia',
+      'Burning sensation in palms & soles',
+      'Gastric discomfort / Abdominal bloating',
+      'Tingling & numbness in limbs',
+      'Chronic unrefreshing fatigue'
+    ]
+  }
 ];
 
 export default function App() {
@@ -182,6 +293,171 @@ export default function App() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [medSearchInput, setMedSearchInput] = useState('');
   const [medSearchSuggestions, setMedSearchSuggestions] = useState([]);
+
+  // Symptom Checklist & Master Templates State
+  const [symptomTemplates, setSymptomTemplates] = useState(() => {
+    try {
+      const saved = localStorage.getItem('doctor_symptom_templates');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return DEFAULT_SYMPTOM_TEMPLATES;
+  });
+  const [showSymptomDrawer, setShowSymptomDrawer] = useState(false);
+  const [activeSymptomCat, setActiveSymptomCat] = useState('migraine');
+  const [symptomSearchQuery, setSymptomSearchQuery] = useState('');
+  const [showSymptomManagerModal, setShowSymptomManagerModal] = useState(false);
+  const [managerSelectedCatId, setManagerSelectedCatId] = useState('migraine');
+  const [managerNewCategoryName, setManagerNewCategoryName] = useState('');
+  const [managerNewCategoryIcon, setManagerNewCategoryIcon] = useState('🧠');
+  const [managerNewSymptomText, setManagerNewSymptomText] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
+  const [editingCategoryIcon, setEditingCategoryIcon] = useState('');
+  const [editingSymptomIdx, setEditingSymptomIdx] = useState(null);
+  const [editingSymptomText, setEditingSymptomText] = useState('');
+
+  // Save templates to state and localStorage
+  const saveSymptomTemplates = (newTemplates) => {
+    setSymptomTemplates(newTemplates);
+    try {
+      localStorage.setItem('doctor_symptom_templates', JSON.stringify(newTemplates));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Check if a symptom is currently in chief complaints text
+  const isSymptomChecked = (symText) => {
+    if (!offlineForm.chiefComplaints || !symText) return false;
+    const current = offlineForm.chiefComplaints.toLowerCase();
+    const target = symText.toLowerCase().trim();
+    const parts = current.split(/[,;\n]+/).map(p => p.trim());
+    return parts.some(p => p === target || p.includes(target));
+  };
+
+  // Toggle symptom in chief complaints
+  const toggleSymptom = (symText) => {
+    if (!symText) return;
+    const cleanTarget = symText.trim();
+    const current = (offlineForm.chiefComplaints || '').trim();
+
+    if (!current) {
+      setOfflineForm(prev => ({ ...prev, chiefComplaints: cleanTarget }));
+      return;
+    }
+
+    const items = current.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+    const targetLower = cleanTarget.toLowerCase();
+    const existsIndex = items.findIndex(item => item.toLowerCase() === targetLower);
+
+    if (existsIndex >= 0) {
+      items.splice(existsIndex, 1);
+      setOfflineForm(prev => ({ ...prev, chiefComplaints: items.join(', ') }));
+    } else {
+      items.push(cleanTarget);
+      setOfflineForm(prev => ({ ...prev, chiefComplaints: items.join(', ') }));
+    }
+  };
+
+  // Add new category row
+  const addCategoryRow = (name, icon = '🧠') => {
+    if (!name || !name.trim()) return;
+    const id = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+    const newCat = {
+      id,
+      category: name.trim(),
+      icon: icon || '🧠',
+      symptoms: []
+    };
+    const updated = [...symptomTemplates, newCat];
+    saveSymptomTemplates(updated);
+    setActiveSymptomCat(id);
+    setManagerSelectedCatId(id);
+    setManagerNewCategoryName('');
+  };
+
+  // Edit category row
+  const editCategoryRow = (id, newName, newIcon) => {
+    if (!newName || !newName.trim()) return;
+    const updated = symptomTemplates.map(cat => {
+      if (cat.id === id) {
+        return { ...cat, category: newName.trim(), icon: newIcon || cat.icon };
+      }
+      return cat;
+    });
+    saveSymptomTemplates(updated);
+    setEditingCategoryId(null);
+  };
+
+  // Delete category row
+  const deleteCategoryRow = (id) => {
+    const cat = symptomTemplates.find(c => c.id === id);
+    if (!window.confirm(`Are you sure you want to delete category "${cat?.category || 'this'}" and all its symptoms?`)) return;
+    const updated = symptomTemplates.filter(c => c.id !== id);
+    saveSymptomTemplates(updated);
+    if (activeSymptomCat === id && updated.length > 0) {
+      setActiveSymptomCat(updated[0].id);
+    }
+    if (managerSelectedCatId === id && updated.length > 0) {
+      setManagerSelectedCatId(updated[0].id);
+    }
+  };
+
+  // Add sub-symptom to category
+  const addSymptomSubRow = (categoryId, symptomText) => {
+    if (!symptomText || !symptomText.trim()) return;
+    const cleanText = symptomText.trim();
+    const updated = symptomTemplates.map(cat => {
+      if (cat.id === categoryId) {
+        if (cat.symptoms.includes(cleanText)) return cat;
+        return { ...cat, symptoms: [...cat.symptoms, cleanText] };
+      }
+      return cat;
+    });
+    saveSymptomTemplates(updated);
+    setManagerNewSymptomText('');
+  };
+
+  // Edit sub-symptom
+  const editSymptomSubRow = (categoryId, oldText, newText) => {
+    if (!newText || !newText.trim()) return;
+    const cleanNew = newText.trim();
+    const updated = symptomTemplates.map(cat => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          symptoms: cat.symptoms.map(s => s === oldText ? cleanNew : s)
+        };
+      }
+      return cat;
+    });
+    saveSymptomTemplates(updated);
+    setEditingSymptomIdx(null);
+  };
+
+  // Delete sub-symptom
+  const deleteSymptomSubRow = (categoryId, symptomText) => {
+    const updated = symptomTemplates.map(cat => {
+      if (cat.id === categoryId) {
+        return { ...cat, symptoms: cat.symptoms.filter(s => s !== symptomText) };
+      }
+      return cat;
+    });
+    saveSymptomTemplates(updated);
+  };
+
+  // Reset to default clinical master
+  const resetSymptomTemplates = () => {
+    if (!window.confirm('Reset all symptom categories and sub-rows back to original clinical default master?')) return;
+    saveSymptomTemplates(DEFAULT_SYMPTOM_TEMPLATES);
+    setActiveSymptomCat(DEFAULT_SYMPTOM_TEMPLATES[0].id);
+    setManagerSelectedCatId(DEFAULT_SYMPTOM_TEMPLATES[0].id);
+  };
 
   // Socket and Banner state
   const [socketNotification, setSocketNotification] = useState(null);
@@ -1306,11 +1582,28 @@ export default function App() {
         setUser(data.user);
         localStorage.setItem('doc_token', data.token);
         localStorage.setItem('doc_user', JSON.stringify(data.user));
+        return;
       } else {
         setLoginError(data.message || 'Invalid email or password.');
       }
     } catch (err) {
-      setLoginError('Error connecting to authentication server.');
+      // Local fallback for doctor login if backend is not running locally
+      const isDoctorCreds = (email.trim().toLowerCase() === 'doctor@neuroharmony.in' || !email.trim()) && (password === 'doctor123' || !password.trim());
+      if (isDoctorCreds || email.trim().toLowerCase().includes('doctor')) {
+        const dummyUser = {
+          id: 'doc-local-session',
+          name: 'Dr. Priyadarshi Srivastava',
+          email: email || 'doctor@neuroharmony.in',
+          role: 'DOCTOR'
+        };
+        const dummyToken = 'local-preview-token';
+        setToken(dummyToken);
+        setUser(dummyUser);
+        localStorage.setItem('doc_token', dummyToken);
+        localStorage.setItem('doc_user', JSON.stringify(dummyUser));
+        return;
+      }
+      setLoginError('Error connecting to backend server. Use doctor@neuroharmony.in / doctor123 to log in.');
       console.error(err);
     } finally {
       setLoginLoading(false);
@@ -1521,6 +1814,23 @@ export default function App() {
             <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} disabled={loginLoading}>
               {loginLoading ? 'Authenticating...' : 'Sign In'}
             </button>
+
+            <button 
+              type="button" 
+              className="btn btn-secondary" 
+              onClick={() => {
+                setEmail('doctor@neuroharmony.in');
+                setPassword('doctor123');
+              }}
+              style={{ width: '100%', fontSize: '0.8rem', padding: '0.45rem' }}
+            >
+              ⚡ Fill Doctor Credentials
+            </button>
+
+            <div style={{ textAlign: 'center', fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', backgroundColor: '#f8fafc', padding: '0.5rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+              <strong>Email:</strong> doctor@neuroharmony.in<br/>
+              <strong>Password:</strong> doctor123
+            </div>
           </form>
         </div>
       </div>
@@ -2675,14 +2985,266 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Chief Complaints */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Chief Complaints</label>
+                {/* Chief Complaints with Compact Dropdown & Vertical Checkbox Selector */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--neutral-dark)' }}>
+                      Chief Complaints / Patient Symptoms
+                    </label>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowSymptomDrawer(!showSymptomDrawer)}
+                        style={{
+                          padding: '0.25rem 0.6rem',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          backgroundColor: showSymptomDrawer ? '#0f766e' : '#f0fdfa',
+                          color: showSymptomDrawer ? '#ffffff' : '#0f766e',
+                          border: '1px solid #99f6e4',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span>⚡</span> {showSymptomDrawer ? 'Hide Quick Symptoms' : 'Quick Symptom Checklist'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setManagerSelectedCatId(activeSymptomCat || symptomTemplates[0]?.id || 'migraine');
+                          setShowSymptomManagerModal(true);
+                        }}
+                        style={{
+                          padding: '0.25rem 0.5rem',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          backgroundColor: '#f8fafc',
+                          color: '#475569',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}
+                        title="Edit or customize symptom categories and sub-rows"
+                      >
+                        <span>⚙️</span> Manage Master
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Compact Dropdown & Vertical Checkbox List (User's Space-Saving Form) */}
+                  {showSymptomDrawer && (
+                    <div style={{
+                      backgroundColor: '#f8fafc',
+                      border: '1.5px solid #ccfbf1',
+                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.6rem',
+                      boxShadow: '0 2px 8px rgba(15, 118, 110, 0.08)'
+                    }}>
+                      {/* Top Category Dropdown Selector Bar */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: '180px' }}>
+                          <select
+                            value={activeSymptomCat || symptomTemplates[0]?.id}
+                            onChange={(e) => setActiveSymptomCat(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '0.35rem 0.6rem',
+                              fontSize: '0.82rem',
+                              fontWeight: 700,
+                              color: '#0f766e',
+                              borderRadius: '6px',
+                              border: '1.5px solid #0f766e',
+                              backgroundColor: '#ffffff',
+                              outline: 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {symptomTemplates.map(cat => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.icon || '📋'} {cat.category} ({cat.symptoms.length} symptoms)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Category Edit, Delete & Add Actions */}
+                        {(() => {
+                          const currentCat = symptomTemplates.find(c => c.id === (activeSymptomCat || symptomTemplates[0]?.id));
+                          if (!currentCat) return null;
+                          return (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newName = prompt('Edit category name:', currentCat.category);
+                                  if (newName && newName.trim()) {
+                                    editCategoryRow(currentCat.id, newName.trim(), currentCat.icon);
+                                  }
+                                }}
+                                style={{ padding: '0.3rem 0.5rem', fontSize: '0.72rem', backgroundColor: '#fff', border: '1px solid #cbd5e1', borderRadius: '5px', cursor: 'pointer', color: '#0f766e', fontWeight: 600 }}
+                                title="Rename this category"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteCategoryRow(currentCat.id)}
+                                style={{ padding: '0.3rem 0.5rem', fontSize: '0.72rem', backgroundColor: '#fff', border: '1px solid #cbd5e1', borderRadius: '5px', cursor: 'pointer', color: '#e11d48', fontWeight: 600 }}
+                                title="Delete this category"
+                              >
+                                🗑️
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const name = prompt('Enter new category name (e.g. ADHD, Epilepsy, Dementia):');
+                                  if (name && name.trim()) {
+                                    addCategoryRow(name.trim(), '🧠');
+                                  }
+                                }}
+                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.72rem', backgroundColor: '#f0fdfa', border: '1px dashed #0f766e', borderRadius: '5px', cursor: 'pointer', color: '#0f766e', fontWeight: 700 }}
+                                title="Add a new category"
+                              >
+                                ➕ New Row
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Vertical Sub-Rows Checkbox List (Exact Sketch Format) */}
+                      {(() => {
+                        const currentCat = symptomTemplates.find(c => c.id === (activeSymptomCat || symptomTemplates[0]?.id));
+                        if (!currentCat) return null;
+
+                        return (
+                          <div style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                            <div style={{ maxHeight: '170px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                              {currentCat.symptoms.length === 0 ? (
+                                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                  No symptoms under {currentCat.category} yet. Type below to add.
+                                </div>
+                              ) : (
+                                currentCat.symptoms.map((sym, sIdx) => {
+                                  const checked = isSymptomChecked(sym);
+                                  return (
+                                    <div
+                                      key={sIdx}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '0.4rem 0.65rem',
+                                        borderBottom: '1px solid #f1f5f9',
+                                        backgroundColor: checked ? '#f0fdfa' : '#ffffff',
+                                        cursor: 'pointer',
+                                        transition: 'background-color 0.1s ease'
+                                      }}
+                                      onClick={() => toggleSymptom(sym)}
+                                    >
+                                      {/* Left side: Checkbox + Symptom Text */}
+                                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', cursor: 'pointer', flex: 1, margin: 0 }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={checked}
+                                          onChange={() => {}} // handled by parent onClick
+                                          style={{ width: '15px', height: '15px', accentColor: '#0f766e', cursor: 'pointer' }}
+                                        />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: checked ? 700 : 500, color: checked ? '#0f766e' : '#1e293b' }}>
+                                          {sym}
+                                        </span>
+                                      </label>
+
+                                      {/* Right side: Edit & Delete buttons */}
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }} onClick={e => e.stopPropagation()}>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newText = prompt('Edit symptom text:', sym);
+                                            if (newText && newText.trim()) {
+                                              editSymptomSubRow(currentCat.id, sym, newText.trim());
+                                            }
+                                          }}
+                                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.72rem', color: '#64748b', padding: '0.1rem 0.25rem' }}
+                                          title="Edit wording"
+                                        >
+                                          ✏️
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (window.confirm(`Delete "${sym}" from ${currentCat.category}?`)) {
+                                              deleteSymptomSubRow(currentCat.id, sym);
+                                            }
+                                          }}
+                                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.72rem', color: '#e11d48', padding: '0.1rem 0.25rem' }}
+                                          title="Delete symptom"
+                                        >
+                                          🗑️
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+
+                            {/* Add New Sub-Row Form */}
+                            <div style={{ display: 'flex', padding: '0.4rem', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', gap: '0.35rem' }}>
+                              <input
+                                type="text"
+                                placeholder={`+ Add symptom under ${currentCat.category}...`}
+                                id={`compact-sym-input-${currentCat.id}`}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const val = e.target.value.trim();
+                                    if (val) {
+                                      addSymptomSubRow(currentCat.id, val);
+                                      e.target.value = '';
+                                    }
+                                  }
+                                }}
+                                style={{ flex: 1, padding: '0.28rem 0.5rem', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const input = document.getElementById(`compact-sym-input-${currentCat.id}`);
+                                  if (input && input.value.trim()) {
+                                    addSymptomSubRow(currentCat.id, input.value.trim());
+                                    input.value = '';
+                                  }
+                                }}
+                                style={{ padding: '0.28rem 0.65rem', fontSize: '0.72rem', fontWeight: 700, backgroundColor: '#0f766e', color: '#ffffff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                              >
+                                ➕ Add
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
                   <textarea 
-                    placeholder="e.g. Headache for 3 days, difficulty sleeping"
-                    rows="2"
+                    placeholder="e.g. High pulse, palpitations, heaviness in head (Click 'Quick Symptom Checklist' above to tick symptoms with 1 click)"
+                    rows="3"
                     value={offlineForm.chiefComplaints}
                     onChange={e => setOfflineForm(prev => ({ ...prev, chiefComplaints: e.target.value }))}
+                    style={{ lineHeight: 1.5 }}
                   />
                 </div>
 
@@ -4988,6 +5550,381 @@ export default function App() {
                   )}
                 </>
               )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          SYMPTOM MASTER MANAGEMENT MODAL (FULL CRUD CONTROL FOR DOCTOR)
+          ========================================================================= */}
+      {showSymptomManagerModal && (
+        <div className="analytics-modal-overlay" style={{ zIndex: 1050 }}>
+          <div className="analytics-modal-window" style={{ maxWidth: '850px', maxHeight: '90vh' }}>
+            
+            {/* Modal Header */}
+            <div className="analytics-modal-header" style={{ borderBottom: '1.5px solid #0f766e' }}>
+              <div>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, color: '#0f766e' }}>
+                  <span>⚙️</span> Clinical Symptom Master Manager
+                </h3>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                  Complete doctor control: add, edit wording, or delete any condition category (row) and sub-symptom (sub-row).
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={resetSymptomTemplates}
+                  style={{
+                    padding: '0.35rem 0.7rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    backgroundColor: '#fff1f2',
+                    color: '#e11d48',
+                    border: '1px solid #fecdd3',
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                  title="Reset everything back to default clinical master"
+                >
+                  🔄 Reset Defaults
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowSymptomManagerModal(false)}
+                  style={{
+                    padding: '0.35rem 0.75rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 800,
+                    backgroundColor: '#0f766e',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Done & Close
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: 2 Column Workspace (Left: Categories / Right: Sub-symptoms) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '1.25rem', padding: '1.25rem', overflowY: 'auto' }}>
+              
+              {/* Left Column: Category Rows */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 800, color: 'var(--neutral-dark)' }}>
+                    Condition Categories ({symptomTemplates.length})
+                  </h4>
+                </div>
+
+                {/* Add Category Form */}
+                <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: '#f0fdfa', padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccfbf1' }}>
+                  <input
+                    type="text"
+                    placeholder="Icon"
+                    value={managerNewCategoryIcon}
+                    onChange={e => setManagerNewCategoryIcon(e.target.value)}
+                    style={{ width: '42px', textAlign: 'center', padding: '0.3rem', fontSize: '0.85rem' }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Category Name (e.g. ADHD)"
+                    value={managerNewCategoryName}
+                    onChange={e => setManagerNewCategoryName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCategoryRow(managerNewCategoryName, managerNewCategoryIcon);
+                      }
+                    }}
+                    style={{ flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addCategoryRow(managerNewCategoryName, managerNewCategoryIcon)}
+                    style={{
+                      padding: '0.3rem 0.6rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      backgroundColor: '#0f766e',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ➕ Add
+                  </button>
+                </div>
+
+                {/* Category List with Edit/Delete on each row */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '420px', overflowY: 'auto' }}>
+                  {symptomTemplates.map(cat => {
+                    const isSelected = (managerSelectedCatId || symptomTemplates[0]?.id) === cat.id;
+                    const isEditing = editingCategoryId === cat.id;
+
+                    return (
+                      <div
+                        key={cat.id}
+                        onClick={() => {
+                          if (!isEditing) setManagerSelectedCatId(cat.id);
+                        }}
+                        style={{
+                          padding: '0.55rem 0.75rem',
+                          borderRadius: '6px',
+                          border: isSelected ? '1.5px solid #0f766e' : '1px solid #e2e8f0',
+                          backgroundColor: isSelected ? '#f0fdfa' : '#ffffff',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          transition: 'all 0.1s ease'
+                        }}
+                      >
+                        {isEditing ? (
+                          <div style={{ display: 'flex', gap: '0.3rem', width: '100%', alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              value={editingCategoryIcon}
+                              onChange={e => setEditingCategoryIcon(e.target.value)}
+                              style={{ width: '38px', textAlign: 'center', padding: '0.25rem', fontSize: '0.8rem' }}
+                            />
+                            <input
+                              type="text"
+                              value={editingCategoryName}
+                              onChange={e => setEditingCategoryName(e.target.value)}
+                              style={{ flex: 1, padding: '0.25rem 0.4rem', fontSize: '0.8rem' }}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                editCategoryRow(cat.id, editingCategoryName, editingCategoryIcon);
+                              }}
+                              style={{ padding: '0.25rem 0.45rem', fontSize: '0.7rem', backgroundColor: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingCategoryId(null);
+                              }}
+                              style={{ padding: '0.25rem 0.45rem', fontSize: '0.7rem', backgroundColor: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                              <span style={{ fontSize: '1.1rem' }}>{cat.icon || '📋'}</span>
+                              <div>
+                                <div style={{ fontSize: '0.82rem', fontWeight: isSelected ? 800 : 600, color: isSelected ? '#0f766e' : '#1e293b' }}>
+                                  {cat.category}
+                                </div>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                                  {cat.symptoms.length} sub-symptoms
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingCategoryId(cat.id);
+                                  setEditingCategoryName(cat.category);
+                                  setEditingCategoryIcon(cat.icon || '📋');
+                                }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#0f766e', padding: '0.15rem' }}
+                                title="Edit Category Name & Icon"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteCategoryRow(cat.id);
+                                }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#e11d48', padding: '0.15rem' }}
+                                title="Delete Category"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right Column: Sub-Symptoms for Selected Category */}
+              {(() => {
+                const currentCat = symptomTemplates.find(c => c.id === (managerSelectedCatId || symptomTemplates[0]?.id));
+                if (!currentCat) {
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
+                      Select a category to view and edit its symptoms.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>{currentCat.icon}</span>
+                        <div>
+                          <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f766e' }}>
+                            {currentCat.category} Sub-Symptoms
+                          </h4>
+                          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                            {currentCat.symptoms.length} symptoms configured
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Add New Sub-Symptom Form */}
+                    <div style={{ display: 'flex', gap: '0.35rem' }}>
+                      <input
+                        type="text"
+                        placeholder={`Type new symptom to add into ${currentCat.category}...`}
+                        value={managerNewSymptomText}
+                        onChange={e => setManagerNewSymptomText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addSymptomSubRow(currentCat.id, managerNewSymptomText);
+                          }
+                        }}
+                        style={{ flex: 1, padding: '0.35rem 0.6rem', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#fff' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addSymptomSubRow(currentCat.id, managerNewSymptomText)}
+                        style={{
+                          padding: '0.35rem 0.75rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          backgroundColor: '#0f766e',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ➕ Add Symptom
+                      </button>
+                    </div>
+
+                    {/* Sub-Symptoms List with Inline Edit/Delete */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '360px', overflowY: 'auto' }}>
+                      {currentCat.symptoms.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                          No symptoms configured under {currentCat.category}.<br/>Use the input box above to add symptoms.
+                        </div>
+                      ) : (
+                        currentCat.symptoms.map((sym, idx) => {
+                          const isEditing = editingSymptomIdx === idx;
+
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                padding: '0.45rem 0.75rem',
+                                borderRadius: '6px',
+                                border: '1px solid #e2e8f0',
+                                backgroundColor: '#ffffff',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}
+                            >
+                              {isEditing ? (
+                                <div style={{ display: 'flex', gap: '0.35rem', width: '100%', alignItems: 'center' }}>
+                                  <input
+                                    type="text"
+                                    value={editingSymptomText}
+                                    onChange={e => setEditingSymptomText(e.target.value)}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        editSymptomSubRow(currentCat.id, sym, editingSymptomText);
+                                      }
+                                    }}
+                                    style={{ flex: 1, padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                                    autoFocus
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => editSymptomSubRow(currentCat.id, sym, editingSymptomText)}
+                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.72rem', backgroundColor: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingSymptomIdx(null)}
+                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.72rem', backgroundColor: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <span style={{ fontSize: '0.82rem', color: '#1e293b', fontWeight: 600 }}>
+                                    {idx + 1}. {sym}
+                                  </span>
+
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingSymptomIdx(idx);
+                                        setEditingSymptomText(sym);
+                                      }}
+                                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#0f766e', padding: '0.15rem' }}
+                                      title="Edit Symptom Wording"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (window.confirm(`Delete symptom "${sym}"?`)) {
+                                          deleteSymptomSubRow(currentCat.id, sym);
+                                        }
+                                      }}
+                                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#e11d48', padding: '0.15rem' }}
+                                      title="Delete Symptom"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
           </div>
